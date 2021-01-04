@@ -9,6 +9,7 @@
 using namespace ::onnxruntime::common;
 namespace onnxruntime {
 
+#if !defined(__wasm__)
 OpKernelContext::OpKernelContext(_Inout_ IExecutionFrame* frame, _In_ const OpKernel* kernel,
                                  _In_opt_ concurrency::ThreadPool* threadpool, _In_ const logging::Logger& logger)
     : execution_frame_(frame), kernel_(kernel), threadpool_(threadpool), logger_(&logger) {
@@ -19,6 +20,14 @@ OpKernelContext::OpKernelContext(_Inout_ IExecutionFrame* frame, _In_ const OpKe
   node_implicit_input_start_index_ = node_input_start_index_ + InputCount();
   node_output_start_index_ = node_implicit_input_start_index_ + ImplicitInputCount();
 }
+#else
+OpKernelContext::OpKernelContext(_Inout_ OrtValue* values, _In_ MLDataType* types,  _In_ const OpKernel* kernel,
+                                 _In_opt_ concurrency::ThreadPool* threadpool,
+                                 _In_ const std::vector<int>& inputs_indices, _In_ const std::vector<int>& outputs_indices)
+    : values_(values), types_(types), kernel_(kernel), threadpool_(threadpool), inputs_indices_(inputs_indices), outputs_indices_(outputs_indices) {
+  ORT_ENFORCE(kernel != nullptr, "OpKernel was null");
+}
+#endif
 
 Tensor* OpKernelContext::Output(int index, const TensorShape& shape) {
   auto p_ml_value = OutputMLValue(index, shape);
@@ -33,6 +42,7 @@ Tensor* OpKernelContext::Output(int index, const std::initializer_list<int64_t>&
   return Output(index, TensorShape(shape));
 }
 
+#if !defined(__wasm__)
 SparseTensor* OpKernelContext::Output(int index, size_t nnz, const TensorShape& shape) {
   auto p_ml_value = OutputMLValue(index, shape, nnz);
   return p_ml_value ? p_ml_value->GetMutable<SparseTensor>() : nullptr;
@@ -122,19 +132,31 @@ OrtValue* OpKernelContext::GetOrCreateOutputMLValue(int index) {
   ORT_ENFORCE(status.IsOK(), status.ErrorMessage());
   return value;
 }
+#endif
 
 int OpKernelContext::GetInputArgIndex(int index) const {
+#if !defined(__wasm__)
   return node_input_start_index_ + index;
+#else
+  return inputs_indices_[index];
+#endif
 }
 
+#if !defined(__wasm__)
 int OpKernelContext::GetImplicitInputArgIndex(int index) const {
   return node_implicit_input_start_index_ + index;
 }
+#endif
 
 int OpKernelContext::GetOutputArgIndex(int index) const {
+#if !defined(__wasm__)
   return node_output_start_index_ + index;
+#else
+  return outputs_indices_[index];
+#endif
 }
 
+#if !defined(__wasm__)
 onnxruntime::NodeIndex OpKernelContext::GetNodeIndex() const {
   return kernel_->Node().Index();
 }
@@ -146,6 +168,7 @@ const std::string& OpKernelContext::GetNodeName() const {
 const std::string& OpKernelContext::GetOpDomain() const {
   return kernel_->KernelDef().Domain();
 }
+#endif
 
 const std::string& OpKernelContext::GetOpType() const {
   return kernel_->Node().OpType();
@@ -155,10 +178,15 @@ const OrtValue* OpKernelContext::GetInputMLValue(int index) const {
   if (index < 0 || index >= InputCount())
     return nullptr;
 
+#if !defined(__wasm__)
   int input_arg_index = GetInputArgIndex(index);
   return execution_frame_->GetNodeInputOrOutputMLValue(input_arg_index);
+#else
+  return &values_[inputs_indices_[index]];
+#endif
 }
 
+#if !defined(__wasm__)
 const OrtValue* OpKernelContext::GetImplicitInputMLValue(int index) const {
   if (index < 0 || index >= ImplicitInputCount())
     return nullptr;
@@ -174,5 +202,6 @@ OrtValue* OpKernelContext::GetOutputMLValue(int index) {
   auto output_arg_index = GetOutputArgIndex(index);
   return execution_frame_->GetMutableNodeInputOrOutputMLValue(output_arg_index);
 }
+#endif
 
 }  // namespace onnxruntime

@@ -8,6 +8,7 @@
 
 namespace onnxruntime {
 
+#if !defined(__wasm__)
 OpKernelInfo::OpKernelInfo(const onnxruntime::Node& node,
                            const KernelDef& kernel_def,
                            const IExecutionProvider& execution_provider,
@@ -28,15 +29,29 @@ OpKernelInfo::OpKernelInfo(const onnxruntime::Node& node,
 OpKernelInfo::OpKernelInfo(const OpKernelInfo& other)
     : OpKernelInfo(other.node_, other.kernel_def_, *other.execution_provider_, other.constant_initialized_tensors_,
                    other.ort_value_name_idx_map_, other.funcs_mgr_, other.data_transfer_mgr_) {}
+#else
+OpKernelInfo::OpKernelInfo(AllocatorPtr allocator, const onnxruntime::NodeAttributes& attributes, size_t num_inputs, size_t num_outputs)
+    : OpNodeProtoHelper(&proto_helper_context_),
+      allocator_(allocator),
+      node_(attributes),
+      proto_helper_context_(attributes, num_inputs, num_outputs) {}
+OpKernelInfo::OpKernelInfo(const OpKernelInfo& other)
+    : OpKernelInfo(other.allocator_, other.node_.GetAttributes(), other.GetInputCount(), other.GetOutputCount()) {}
+#endif
 
+AllocatorPtr OpKernelInfo::GetAllocator(int device_id, OrtMemType mem_type) const {
+#if !defined(__wasm__)
+  return execution_provider_->GetAllocator(device_id, mem_type);
+#else
+  return allocator_;
+#endif
+}
+
+#if !defined(__wasm__)
 const OrtMemoryInfo& OpKernelInfo::GetMemoryInfo(int device_id, OrtMemType mem_type) const {
   AllocatorPtr alloc = GetAllocator(device_id, mem_type);
   if (alloc == nullptr) ORT_THROW("cannot find allocator");
   return alloc->Info();
-}
-
-AllocatorPtr OpKernelInfo::GetAllocator(int device_id, OrtMemType mem_type) const {
-  return execution_provider_->GetAllocator(device_id, mem_type);
 }
 
 const KernelDef& OpKernelInfo::GetKernelDef() const {
@@ -82,4 +97,5 @@ bool OpKernelInfo::TryGetConstantInput(int input_index, const Tensor** constant_
 common::Status OpKernelInfo::GetFusedFuncs(NodeComputeInfo*& compute_info) const {
   return funcs_mgr_.GetFuncs(node_.Name(), compute_info);
 }
+#endif
 }  // namespace onnxruntime

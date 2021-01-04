@@ -247,7 +247,8 @@ if(NOT onnxruntime_MINIMAL_BUILD AND NOT onnxruntime_REDUCED_OPS_BUILD)
     )
 endif()
 
-if(onnxruntime_DISABLE_ML_OPS)
+if(NOT onnxruntime_MINIMAL_BUILD AND onnxruntime_DISABLE_ML_OPS)
+  message(${onnxruntime_test_providers_cpu_src})
   list(FILTER onnxruntime_test_providers_cpu_src EXCLUDE REGEX ".*/ml/.*")
 endif()
 

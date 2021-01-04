@@ -37,6 +37,7 @@ class OpKernel {
   explicit OpKernel(const OpKernelInfo& info) : op_kernel_info_(info) {}
   virtual ~OpKernel() = default;
 
+#if !defined(__wasm__)
   const onnxruntime::Node& Node() const {
     return op_kernel_info_.node();
   }
@@ -44,12 +45,15 @@ class OpKernel {
   const onnxruntime::KernelDef& KernelDef() const {
     return op_kernel_info_.GetKernelDef();
   }
+#endif
 
   virtual Status Compute(_Inout_ OpKernelContext* context) const ORT_MUST_USE_RESULT = 0;
 
+#if !defined(__wasm__)
   virtual Status ComputeAsync(_Inout_ OpKernelContext*, DoneCallback) const ORT_MUST_USE_RESULT {
     ORT_NOT_IMPLEMENTED(__FUNCTION__, " is not implemented");
   }
+#endif
 
   // Override this function to PrePack initialized constant tensor to the format as needed.
   // For example, MatMul kernel can pack the input B if it is constant like code below.
@@ -72,9 +76,11 @@ class OpKernel {
     return Status::OK();
   }
 
+#if !defined(__wasm__)
   const OrtMemoryInfo& Allocator(int id, OrtMemType mem_type) const {
     return op_kernel_info_.GetMemoryInfo(id, mem_type);
   }
+#endif
 
   const OpKernelInfo& Info() const { return op_kernel_info_; }
 
@@ -87,11 +93,17 @@ class OpKernelContext {
  public:
   using ArgMap = std::unordered_map<std::string, size_t>;
 
+#if !defined(__wasm__)
   OpKernelContext(_Inout_ IExecutionFrame* frame, _In_ const OpKernel* kernel,
                   _In_opt_ concurrency::ThreadPool* threadpool, _In_ const logging::Logger& logger);
+#else
+  OpKernelContext(_Inout_ OrtValue* values, _In_ MLDataType* types,  _In_ const OpKernel* kernel,
+                  _In_opt_ concurrency::ThreadPool* threadpool, _In_ const std::vector<int>& inputs_indices, _In_ const std::vector<int>& outputs_indices);
+#endif
 
   virtual ~OpKernelContext() = default;
 
+#if !defined(__wasm__)
   /**
   Return the number of inputs for a variadic argument.
   @param arg_num The operator argument number.
@@ -101,16 +113,21 @@ class OpKernelContext {
 
   MLDataType InputType(int index) const;
   MLDataType OutputType(int index) const;
+#endif
 
   template <typename T>
   const T* Input(int index) const {
     const OrtValue* p_ml_value = GetInputMLValue(index);
+#if !defined(__wasm__)
     ORT_TRY {
       return p_ml_value ? &(p_ml_value->Get<T>()) : nullptr;
     }
     ORT_CATCH(const std::exception& /*e*/) {
       ORT_THROW("Missing Input: " + kernel_->Node().InputDefs()[index]->Name());
     }
+#else
+    return p_ml_value ? &(p_ml_value->Get<T>()) : nullptr;
+#endif
   }
 
   // Fetch a required input, enforcing that it is present.
@@ -145,6 +162,7 @@ class OpKernelContext {
     return *output_ptr;
   }
 
+#if !defined(__wasm__)
   // Fetch a sparse-tensor output corresponding to the specified index.
   // num_values must specify the number of non-zero values (commonly known as NNZ/nnz),
   // and shape must specify the shape of the underlying dense-tensor.
@@ -165,20 +183,33 @@ class OpKernelContext {
   const logging::Logger& Logger() const {
     return *logger_;
   }
+#endif
 
   // always >= 0
   int InputCount() const {
+#if !defined(__wasm__)
     return static_cast<int>(kernel_->Node().InputDefs().size());
+#else
+    return static_cast<int>(inputs_indices_.size());
+#endif
   }
 
   // always >= 0
   int ImplicitInputCount() const {
+#if !defined(__wasm__)
     return static_cast<int>(kernel_->Node().ImplicitInputDefs().size());
+#else
+    return 0;
+#endif
   }
 
   // always >= 0
   int OutputCount() const {
+#if !defined(__wasm__)
     return static_cast<int>(kernel_->Node().OutputDefs().size());
+#else
+    return static_cast<int>(outputs_indices_.size());
+#endif
   }
 
   /**
@@ -187,6 +218,7 @@ class OpKernelContext {
    */
   Status GetTempSpaceAllocator(AllocatorPtr* output) const ORT_MUST_USE_RESULT;
 
+#if !defined(__wasm__)
   /**
   Return the fence of current node's input.
   @param index The index of the input.
@@ -222,6 +254,7 @@ class OpKernelContext {
   Returns the opset domain of the underlying kernel
   **/
   const std::string& GetOpDomain() const;
+#endif
 
   /**
   Returns the optype of the underlying kernel
@@ -246,11 +279,14 @@ class OpKernelContext {
   }
 
  protected:
+  const OrtValue* GetInputMLValue(int index) const;
+  OrtValue* GetOutputMLValue(int index);
+
+#if !defined(__wasm__)
   onnxruntime::NodeIndex GetNodeIndex() const;
 
-  const OrtValue* GetInputMLValue(int index) const;
   const OrtValue* GetImplicitInputMLValue(int index) const;
-  OrtValue* GetOutputMLValue(int index);
+#endif
 
   // Creates the OrtValue* based on the shape, if it does not exist
   // The parameter nnz is used only for sparse-tensors and indicates the
@@ -263,13 +299,26 @@ class OpKernelContext {
   OrtValue* GetOrCreateOutputMLValue(int index);
 
   int GetInputArgIndex(int index) const;
+#if !defined(__wasm__)
   int GetImplicitInputArgIndex(int index) const;
+#endif
   int GetOutputArgIndex(int index) const;
 
+#if !defined(__wasm__)
   IExecutionFrame* const execution_frame_;
+  const logging::Logger* const logger_;
+#else
+
+  // value list for WASM (we dont need execution frame here)
+  OrtValue* values_;
+  MLDataType* types_;
+
+  std::vector<int> inputs_indices_;
+  std::vector<int> outputs_indices_;
+#endif
+
   const OpKernel* const kernel_;
   concurrency::ThreadPool* const threadpool_;
-  const logging::Logger* const logger_;
 
   // The argument starting index in ExecutionFrame.
   int node_input_start_index_{-1};

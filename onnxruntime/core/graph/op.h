@@ -11,7 +11,12 @@
 
 namespace onnxruntime {
 using AttrType = ONNX_NAMESPACE::AttributeProto_AttributeType;
+#if !defined(__wasm__)
 using NodeAttributes = std::unordered_map<std::string, ONNX_NAMESPACE::AttributeProto>;
+#else
+struct AttributeStub;
+using NodeAttributes = std::unordered_map<std::string, AttributeStub>;
+#endif
 
 // This string array should exactly match the AttrType defined above.
 /*

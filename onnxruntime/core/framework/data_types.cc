@@ -297,6 +297,7 @@ class DataTypeRegistry {
 };
 
 struct TypeProtoImpl {
+#if !defined(__wasm__)
   const TypeProto* GetProto() const {
     return &proto_;
   }
@@ -305,6 +306,7 @@ struct TypeProtoImpl {
   }
 
   TypeProto proto_;
+#endif
 };
 
 }  // namespace data_types_internal
@@ -314,13 +316,22 @@ struct TensorTypeBase::Impl : public data_types_internal::TypeProtoImpl {
 };
 
 const ONNX_NAMESPACE::TypeProto* TensorTypeBase::GetTypeProto() const {
+#if !defined(__wasm__)
   return impl_->GetProto();
+#else
+  return nullptr;
+#endif
 }
 
+#if !defined(__wasm__)
 TensorTypeBase::TensorTypeBase() : impl_(new Impl()) {}
 TensorTypeBase::~TensorTypeBase() {
   delete impl_;
 }
+#else
+TensorTypeBase::TensorTypeBase() {}
+TensorTypeBase::~TensorTypeBase() {}
+#endif
 
 size_t TensorTypeBase::Size() const {
   return sizeof(Tensor);
@@ -335,6 +346,7 @@ DeleteFunc TensorTypeBase::GetDeleteFunc() const {
   return &Delete<Tensor>;
 }
 
+#if !defined(__wasm__)
 ONNX_NAMESPACE::TypeProto& TensorTypeBase::mutable_type_proto() {
   return impl_->mutable_type_proto();
 }
@@ -354,12 +366,14 @@ bool TensorTypeBase::IsCompatible(const ONNX_NAMESPACE::TypeProto& type_proto) c
 
   return data_types_internal::IsCompatible(thisProto->tensor_type(), type_proto.tensor_type());
 }
+#endif
 
 MLDataType TensorTypeBase::Type() {
   static TensorTypeBase tensor_base;
   return &tensor_base;
 }
 
+#if !defined(__wasm__)
 /// SparseTensor
 
 struct SparseTensorTypeBase::Impl : public data_types_internal::TypeProtoImpl {
@@ -520,6 +534,7 @@ void NonTensorTypeBase::FromDataContainer(const void* /* data */, size_t /*data_
 void NonTensorTypeBase::ToDataContainer(const OrtValue& /* input */, size_t /*data_size */, void* /* data */) const {
   ORT_ENFORCE(false, "Not implemented");
 }
+#endif
 
 ORT_REGISTER_TENSOR_TYPE(int32_t);
 ORT_REGISTER_TENSOR_TYPE(float);
@@ -720,10 +735,12 @@ const char* DataTypeImpl::ToString(MLDataType type) {
         break;
     }
   }
+#if !defined(__wasm__)
   auto type_proto = type->GetTypeProto();
   if (type_proto != nullptr) {
     return ONNX_NAMESPACE::Utils::DataTypeUtils::ToType(*type_proto)->c_str();
   }
+#endif
 #ifdef ORT_NO_RTTI
   return "(unknown type)";
 #else

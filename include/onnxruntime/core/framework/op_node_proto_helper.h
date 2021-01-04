@@ -25,6 +25,64 @@ class IMLOpKernel;
 
 namespace onnxruntime {
 
+#if defined(__wasm__)
+struct AttributeStub {
+  //static std::unique_ptr<AttributeStub> Create() { return onnxruntime::make_unique<AttributeStub>(); }
+  //void operator=(const AttributeStub& v) = default;
+  //static void operator delete(void* p) { g_host->Provider_AttributeProto__operator_delete(reinterpret_cast<AttributeStub*>(p)); }
+
+  ONNX_NAMESPACE::AttributeProto_AttributeType type() const { return type_; }
+  int ints_size() const { return static_cast<int>(ints_.size()); }
+  int floats_size() const { return static_cast<int>(floats_.size()); }
+  int strings_size() const { return static_cast<int>(strings_.size()); }
+  const std::vector<int64_t>& ints() const { return ints_; }
+  int64_t ints(int i) const { return ints_[i]; }
+  void set_ints(const std::vector<int64_t>& values) { ints_ = values; }
+  int64_t i() const { return i_; }
+  void set_i(int64_t value) { i_ = value; }
+  const std::vector<float>& floats() const { return floats_; }
+  float floats(int i) const { return floats_[i]; }
+  void set_floats(const std::vector<float>& values) { floats_ = values; }
+  float f() const { return f_; }
+  void set_f(float value) { f_ = value; }
+  const std::vector<std::string>& strings() const { return strings_; }
+  const ::std::string& strings(int i) const { return strings_[i]; }
+  void set_strings(const std::vector<std::string>& values) { strings_ = values; }
+  const ::std::string& s() const { return s_; }
+  void set_s(const ::std::string& value) { s_ = value; }
+  // void set_name(const ::std::string& value) { return g_host->Provider_AttributeProto__set_name(this, value); }
+  void set_type(ONNX_NAMESPACE::AttributeProto_AttributeType value) { type_ = value; }
+  // Provider_TensorProto* add_tensors() { return g_host->Provider_AttributeProto__add_tensors(this); }
+
+  AttributeStub() = default;
+  AttributeStub(const AttributeStub&) = default;
+
+  template<typename T>
+  static inline const std::string& AttributeType_Name(T enum_t_value) {
+    //return ONNX_NAMESPACE::AttributeProto::AttributeType_Name(enum_t_value);
+    static std::string dummy = "";
+    return dummy;
+  }
+
+ private:
+  ::onnx::AttributeProto_AttributeType type_;
+  std::vector<int64_t> ints_;
+  int64_t i_;
+  std::vector<float> floats_;
+  float f_;
+  std::vector<std::string> strings_;
+  std::string s_;
+};
+
+#endif
+
+#if !defined(__wasm__)
+  using AttributeType = ONNX_NAMESPACE::AttributeProto;
+#else
+  using AttributeType = AttributeStub;
+#endif
+
+
 /**
    A set of wrappers with common signatures for use with both OpKernelInfo
    (as its base class) and InferenceContext.  Used by ABI kernels for both
@@ -112,6 +170,7 @@ class OpNodeProtoHelper {
     return gsl::narrow_cast<uint32_t>(impl_->getNumOutputs());
   }
 
+#if !defined(__wasm__)
   const ONNX_NAMESPACE::TypeProto* GetInputType(size_t index) const {
     return impl_->getInputType(index);
   }
@@ -120,14 +179,15 @@ class OpNodeProtoHelper {
     // Work around lack of a const method from the onnx InferenceContext interface
     return const_cast<Impl_t*>(impl_)->getOutputType(index);
   }
+#endif
 
   // Try to query an attribute, returning nullptr if it doesn't exist
-  const ONNX_NAMESPACE::AttributeProto* TryGetAttribute(const std::string& name) const {
+  const AttributeType* TryGetAttribute(const std::string& name) const {
     return impl_->getAttribute(name);
   }
 
-  const ONNX_NAMESPACE::AttributeProto* GetAttribute(const std::string& name) const {
-    const ONNX_NAMESPACE::AttributeProto* attr = TryGetAttribute(name);
+  const AttributeType* GetAttribute(const std::string& name) const {
+    const AttributeType* attr = TryGetAttribute(name);
     ORT_ENFORCE(attr != nullptr);
     return attr;
   }
@@ -141,17 +201,35 @@ class OpNodeProtoHelper {
 // the same signatures as InferenceContext other than const-ness.
 class ProtoHelperNodeContext {
  public:
+#if !defined(__wasm__)
   explicit ProtoHelperNodeContext(const onnxruntime::Node& node) : node_(node) {}
+#else
+  explicit ProtoHelperNodeContext(const onnxruntime::NodeAttributes& attributes,
+                                  size_t num_inputs,
+                                  size_t num_outputs) : attributes_(attributes),
+                                                        num_inputs_(num_inputs),
+                                                        num_outputs_(num_outputs) {}
+#endif
   ProtoHelperNodeContext() = delete;
 
-  const ONNX_NAMESPACE::AttributeProto* getAttribute(const std::string& name) const;
+  const AttributeType* getAttribute(const std::string& name) const;
   size_t getNumInputs() const;
+#if !defined(__wasm__)
   const ONNX_NAMESPACE::TypeProto* getInputType(size_t index) const;
+#endif
   size_t getNumOutputs() const;
+#if !defined(__wasm__)
   const ONNX_NAMESPACE::TypeProto* getOutputType(size_t index) const;
+#endif
 
  private:
+#if !defined(__wasm__)
   const onnxruntime::Node& node_;
+#else
+  const onnxruntime::NodeAttributes& attributes_;
+  size_t num_inputs_;
+  size_t num_outputs_;
+#endif
 };
 
 }  // namespace onnxruntime

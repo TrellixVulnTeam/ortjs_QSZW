@@ -33,7 +33,12 @@ using ProviderType = const std::string&;
 // converting to std::string, but requires conversion to std::map<std::string, foo, std::less<>>
 // instead of std::unordered_map<std::string, foo, [std::less<foo>]>.
 
+#if !defined(__wasm__)
 using NodeAttributes = std::unordered_map<std::string, ONNX_NAMESPACE::AttributeProto>;
+#else
+struct AttributeStub;
+using NodeAttributes = std::unordered_map<std::string, AttributeStub>;
+#endif
 class IOnnxRuntimeOpSchemaCollection;
 using IOnnxRuntimeOpSchemaCollectionPtr = std::shared_ptr<IOnnxRuntimeOpSchemaCollection>;
 }  // namespace onnxruntime

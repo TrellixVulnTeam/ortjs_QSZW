@@ -192,6 +192,7 @@ class DataTypeImpl {
  public:
   virtual ~DataTypeImpl() = default;
 
+#if !defined(__wasm__)
   /**
    * \brief this API will be used to check type compatibility at runtime
    *
@@ -200,6 +201,7 @@ class DataTypeImpl {
    *        MLDataType instance.
    */
   virtual bool IsCompatible(const ONNX_NAMESPACE::TypeProto& type_proto) const = 0;
+#endif
 
   virtual size_t Size() const = 0;
 
@@ -490,10 +492,12 @@ class TensorTypeBase : public DataTypeImpl {
  public:
   static MLDataType Type();
 
+#if !defined(__wasm__)
   /// We first compare type_proto pointers and then
   /// if they do not match try to account for the case
   /// where TypeProto was created ad-hoc and not queried from MLDataType
   bool IsCompatible(const ONNX_NAMESPACE::TypeProto& type_proto) const override;
+#endif
 
   bool IsTensorType() const override {
     return true;
@@ -574,7 +578,9 @@ class SparseTensorTypeBase : public DataTypeImpl {
     return this;
   }
 
+#if !defined(__wasm__)
   bool IsCompatible(const ONNX_NAMESPACE::TypeProto& type_proto) const override;
+#endif
 
   size_t Size() const override;
 
@@ -788,7 +794,9 @@ class SequenceTensorTypeBase : public DataTypeImpl {
  public:
   static MLDataType Type();
 
+#if !defined(__wasm__)
   bool IsCompatible(const ONNX_NAMESPACE::TypeProto& type_proto) const override;
+#endif
 
   bool IsTensorSequenceType() const override {
     return true;
@@ -895,9 +903,11 @@ class OpaqueType : public NonTensorType<T> {
  */
 class PrimitiveDataTypeBase : public DataTypeImpl {
  public:
+#if !defined(__wasm__)
   bool IsCompatible(const ONNX_NAMESPACE::TypeProto&) const override {
     return false;
   }
+#endif
 
   const PrimitiveDataTypeBase* AsPrimitiveDataType() const override final {
     return this;

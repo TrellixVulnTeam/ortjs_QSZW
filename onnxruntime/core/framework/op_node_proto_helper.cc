@@ -8,9 +8,72 @@
 #include "core/graph/op.h"
 #include "gsl/gsl"
 
+#if !defined(__wasm__)
 using namespace ONNX_NAMESPACE;
+#endif
 using namespace ::onnxruntime::common;
 namespace onnxruntime {
+
+#if defined(__wasm__)
+using AttributeProto = onnxruntime::AttributeStub;
+using ONNX_NAMESPACE::AttributeProto_AttributeType;
+using ONNX_NAMESPACE::AttributeProto_AttributeType_UNDEFINED;
+using ONNX_NAMESPACE::AttributeProto_AttributeType_FLOAT;
+using ONNX_NAMESPACE::AttributeProto_AttributeType_INT;
+using ONNX_NAMESPACE::AttributeProto_AttributeType_STRING;
+using ONNX_NAMESPACE::AttributeProto_AttributeType_TENSOR;
+using ONNX_NAMESPACE::AttributeProto_AttributeType_GRAPH;
+using ONNX_NAMESPACE::AttributeProto_AttributeType_SPARSE_TENSOR;
+using ONNX_NAMESPACE::AttributeProto_AttributeType_FLOATS;
+using ONNX_NAMESPACE::AttributeProto_AttributeType_INTS;
+using ONNX_NAMESPACE::AttributeProto_AttributeType_STRINGS;
+using ONNX_NAMESPACE::AttributeProto_AttributeType_TENSORS;
+using ONNX_NAMESPACE::AttributeProto_AttributeType_GRAPHS;
+using ONNX_NAMESPACE::AttributeProto_AttributeType_SPARSE_TENSORS;
+
+template <class T>
+bool HasTyped(const AttributeProto*);
+
+template <>
+inline bool HasTyped<float>(const AttributeProto* attr) {
+  return attr->type() == ONNX_NAMESPACE::AttributeProto::AttributeType::AttributeProto_AttributeType_FLOAT;
+}
+template <>
+inline bool HasTyped<int64_t>(const AttributeProto* attr) {
+  return attr->type() == ONNX_NAMESPACE::AttributeProto::AttributeType::AttributeProto_AttributeType_INT;
+}
+template <>
+inline bool HasTyped<std::string>(const AttributeProto* attr) {
+  return attr->type() == ONNX_NAMESPACE::AttributeProto::AttributeType::AttributeProto_AttributeType_STRINGS;
+}
+
+// template <>
+// inline bool HasTyped<TensorProto>(const AttributeProto* attr) {
+//   return attr->type() == ONNX_NAMESPACE::AttributeProto::AttributeType::AttributeProto_AttributeType_TENSOR;
+// }
+// template <>
+// inline bool HasTyped<GraphProto>(const AttributeProto* attr) {
+//   return attr->type() == ONNX_NAMESPACE::AttributeProto::AttributeType::AttributeProto_AttributeType_GRAPH;
+// }
+
+template <typename T>
+inline bool HasTypedList(const AttributeProto* attr);
+
+template <>
+inline bool HasTypedList<float>(const AttributeProto* attr) {
+  return attr->type() == ONNX_NAMESPACE::AttributeProto::AttributeType::AttributeProto_AttributeType_FLOATS;
+}
+
+template <>
+inline bool HasTypedList<int64_t>(const AttributeProto* attr) {
+  return attr->type() == ONNX_NAMESPACE::AttributeProto::AttributeType::AttributeProto_AttributeType_INTS;
+}
+
+template <>
+inline bool HasTypedList<std::string>(const AttributeProto* attr) {
+  return attr->type() == ONNX_NAMESPACE::AttributeProto::AttributeType::AttributeProto_AttributeType_STRINGS;
+}
+#else
 
 template <class T>
 bool HasTyped(const AttributeProto*);
@@ -55,6 +118,8 @@ inline bool HasTypedList<std::string>(const AttributeProto* attr) {
   return utils::HasStrings(*attr);
 }
 
+#endif
+
 template <typename T>
 inline constexpr int ArrayTypeToAttributeType();
 
@@ -72,7 +137,6 @@ template <>
 inline constexpr int ArrayTypeToAttributeType<std::string>() {
   return AttributeProto_AttributeType_STRINGS;
 }
-
 
 #define ORT_DEFINE_GET_ATTR(IMPL_T, T, type)                                                       \
   template <>                                                                                      \
@@ -169,13 +233,17 @@ inline constexpr int ArrayTypeToAttributeType<std::string>() {
 ORT_DEFINE_GET_ATTR_SPECIALIZATIONS(float, f)
 ORT_DEFINE_GET_ATTR_SPECIALIZATIONS(int64_t, i)
 ORT_DEFINE_GET_ATTR_SPECIALIZATIONS(std::string, s)
+#if !defined(__wasm__)
 ORT_DEFINE_GET_ATTR_SPECIALIZATIONS(TensorProto, t)
 ORT_DEFINE_GET_ATTR_SPECIALIZATIONS(GraphProto, g)
+#endif
 ORT_DEFINE_GET_ATTRS_SPECIALIZATIONS(float, floats)
 ORT_DEFINE_GET_ATTRS_SPECIALIZATIONS(int64_t, ints)
 ORT_DEFINE_GET_ATTRS_SPECIALIZATIONS(std::string, strings)
+#if !defined(__wasm__)
 ORT_DEFINE_GET_ATTRS_SPECIALIZATIONS(TensorProto, tensors)
 ORT_DEFINE_GET_ATTRS_SPECIALIZATIONS(GraphProto, graphs)
+#endif
 
 ORT_DEFINE_GET_ATTRS_SPAN_SPECIALIZATION(float, floats)
 ORT_DEFINE_GET_ATTRS_SPAN_SPECIALIZATION(int64_t, ints)
@@ -205,15 +273,27 @@ MUST_USE_RESULT Status OpNodeProtoHelper<Impl_t>::GetAttrsStringRefs(
 }
 
 size_t ProtoHelperNodeContext::getNumInputs() const {
+#if !defined(__wasm__)
   return node_.InputDefs().size();
+#else
+  return num_inputs_;
+#endif
 }
 
 size_t ProtoHelperNodeContext::getNumOutputs() const {
-  return node_.OutputDefs().size();
+#if !defined(__wasm__)
+  return node_.InputDefs().size();
+#else
+  return num_outputs_;
+#endif
 }
 
 const AttributeProto* ProtoHelperNodeContext::getAttribute(const std::string& name) const {
+#if !defined(__wasm__)
   const onnxruntime::NodeAttributes& attributes = node_.GetAttributes();
+#else
+  const onnxruntime::NodeAttributes& attributes = attributes_;
+#endif
   auto it = attributes.find(name);
   if (it != attributes.end()) {
     return &it->second;
@@ -221,6 +301,7 @@ const AttributeProto* ProtoHelperNodeContext::getAttribute(const std::string& na
   return nullptr;
 }
 
+#if !defined(__wasm__)
 const TypeProto* ProtoHelperNodeContext::getInputType(size_t index) const {
   return node_.InputDefs()[index]->TypeAsProto();
 }
@@ -228,6 +309,7 @@ const TypeProto* ProtoHelperNodeContext::getInputType(size_t index) const {
 const TypeProto* ProtoHelperNodeContext::getOutputType(size_t index) const {
   return node_.OutputDefs()[index]->TypeAsProto();
 }
+#endif
 
 template <class Impl_t>
 uint32_t OpNodeProtoHelper<Impl_t>::GetPrimitiveAttrElementCount(AttributeProto_AttributeType type,

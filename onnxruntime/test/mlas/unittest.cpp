@@ -20,6 +20,12 @@ Abstract:
 #include <limits>
 #include <memory>
 #include <random>
+
+////// UNITTEST
+#include "core/framework/allocator.h"
+#include "core/framework/op_kernel_info.h"
+#include "core/providers/cpu/math/gemm.h"
+
 #include <mlas.h>
 
 #if defined(_WIN32)
@@ -29,6 +35,7 @@ Abstract:
 #endif
 #if !defined(MLAS_NO_ONNXRUNTIME_THREADPOOL)
 #include "core/platform/threadpool.h"
+#include "core/platform/env.h"
 #endif
 
 #include "core/common/make_unique.h"
@@ -37,7 +44,21 @@ Abstract:
 #define _countof(_Array) (sizeof(_Array) / sizeof(_Array[0]))
 #endif
 
+//MLAS_THREADPOOL* threadpool = nullptr;
+
+#if !defined(MLAS_NO_ONNXRUNTIME_THREADPOOL)
+MLAS_THREADPOOL* threadpool = new MLAS_THREADPOOL(&onnxruntime::Env::Default(),
+                                                   onnxruntime::ThreadOptions{},
+#if defined(_WIN32)
+                                                   L"unittest",
+#else
+                                                   "unittest",
+#endif
+                                                   4, //onnxruntime::Env::Default().GetNumCpuCores(),
+                                                   false);
+#else
 MLAS_THREADPOOL* threadpool = nullptr;
+#endif
 
 template<typename T>
 class MatrixGuardBuffer
@@ -3189,10 +3210,10 @@ RunThreadedTests(
     onnxruntime::make_unique<MlasFgemmTest<float, false>>()->ExecuteShort();
     printf("SGEMM packed tests.\n");
     onnxruntime::make_unique<MlasFgemmTest<float, true>>()->ExecuteShort();
-#ifdef MLAS_SUPPORTS_GEMM_DOUBLE
-    printf("DGEMM tests.\n");
-    onnxruntime::make_unique<MlasFgemmTest<double, false>>()->ExecuteShort();
-#endif
+// #ifdef MLAS_SUPPORTS_GEMM_DOUBLE
+//     printf("DGEMM tests.\n");
+//     onnxruntime::make_unique<MlasFgemmTest<double, false>>()->ExecuteShort();
+// #endif
 
     printf("SGEMM benchmark.\n");
     onnxruntime::make_unique<MlasFgemmTest<float, false>>()->Benchmark(CblasNoTrans, CblasNoTrans);
@@ -3208,6 +3229,90 @@ RunThreadedTests(
 
 }
 
+template <typename T>
+void CreateMLValue(onnxruntime::AllocatorPtr alloc, const std::vector<int64_t>& dims, const std::vector<T>& value,
+                   OrtValue* p_mlvalue) {
+  onnxruntime::TensorShape shape(dims);
+  auto element_type = onnxruntime::DataTypeImpl::GetType<T>();
+  std::unique_ptr<onnxruntime::Tensor> p_tensor = onnxruntime::make_unique<onnxruntime::Tensor>(element_type,
+                                                                      shape,
+                                                                      alloc);
+  if (value.size() > 0) {
+    CopyVectorToTensor(value, *p_tensor);
+  }
+
+  p_mlvalue->Init(p_tensor.release(),
+                  onnxruntime::DataTypeImpl::GetType<onnxruntime::Tensor>(),
+                  onnxruntime::DataTypeImpl::GetType<onnxruntime::Tensor>()->GetDeleteFunc());
+}
+
+// Lifetime of data_buffer should be managed by the caller.
+template <typename T>
+void CreateMLValue(const std::vector<int64_t>& dims, T* data_buffer, const OrtMemoryInfo& info,
+                   OrtValue* p_mlvalue) {
+  onnxruntime::TensorShape shape(dims);
+  auto element_type = onnxruntime::DataTypeImpl::GetType<T>();
+  std::unique_ptr<onnxruntime::Tensor> p_tensor = onnxruntime::make_unique<onnxruntime::Tensor>(element_type,
+                                                                      shape,
+                                                                      data_buffer,
+                                                                      info);
+  p_mlvalue->Init(p_tensor.release(),
+                  onnxruntime::DataTypeImpl::GetType<onnxruntime::Tensor>(),
+                  onnxruntime::DataTypeImpl::GetType<onnxruntime::Tensor>()->GetDeleteFunc());
+}
+
+void test_opkernel() {
+    printf("### START!\n");
+    ::onnxruntime::AllocatorPtr allocator = std::make_shared<::onnxruntime::CPUAllocator>();
+    ::onnxruntime::NodeAttributes attributes;
+    ::onnxruntime::AttributeStub transA;
+    transA.set_type(ONNX_NAMESPACE::AttributeProto_AttributeType_INT);
+    transA.set_i(0);
+    ::onnxruntime::AttributeStub transB;
+    transB.set_type(ONNX_NAMESPACE::AttributeProto_AttributeType_INT);
+    transB.set_i(0);
+    ::onnxruntime::AttributeStub alpha;
+    alpha.set_type(ONNX_NAMESPACE::AttributeProto_AttributeType_FLOAT);
+    alpha.set_f(1.0f);
+    ::onnxruntime::AttributeStub beta;
+    beta.set_type(ONNX_NAMESPACE::AttributeProto_AttributeType_FLOAT);
+    beta.set_f(1.0f);
+    // transA.set_name("transA");
+    // transA.set_type(ONNX_NAMESPACE::AttributeProto::INT);
+    // transA.set_i(0);
+    attributes["transA"] = transA;
+    attributes["transB"] = transB;
+    attributes["alpha"] = alpha;
+    attributes["beta"] = beta;
+    ::onnxruntime::OpKernelInfo info(allocator, attributes, 2, 1);
+    ::onnxruntime::Gemm<float> gemmKernel(info);
+
+    std::vector<OrtValue> values(3);
+    float A[2 * 2] = {1, 2, 3, 4};
+    float B[2 * 2] = {1, 2, 3, 4};
+    CreateMLValue<float>({2, 2}, A, allocator->Info(), &values[0]);
+    CreateMLValue<float>({2, 2}, B, allocator->Info(), &values[1]);
+
+    std::vector<::onnxruntime::MLDataType> types(3);
+    types[0] = onnxruntime::DataTypeImpl::GetType<float>();
+    types[1] = onnxruntime::DataTypeImpl::GetType<float>();
+    types[2] = onnxruntime::DataTypeImpl::GetType<float>();
+
+    std::vector<int> input_indices{ 0, 1 };
+    std::vector<int> output_indices{ 2 };
+
+    ::onnxruntime::OpKernelContext ctx(values.data(), types.data(), &gemmKernel, threadpool, input_indices, output_indices);
+    printf("### 4!\n");
+    auto status = gemmKernel.Compute(&ctx);
+    (void)(status);
+    printf("### 5!\n");
+
+    auto &output = values[2].Get<::onnxruntime::Tensor>();
+    printf("### dims_len=%s\n", output.Shape().ToString().c_str());
+    const float * output_data = output.Data<float>();
+    printf("### [%f, %f, %f, %f]\n", output_data[0], output_data[1], output_data[2], output_data[3]);
+}
+
 int
 #if defined(_WIN32)
 __cdecl
@@ -3216,9 +3321,7 @@ main(
     void
     )
 {
-    //
-    // Run threaded tests without the thread pool.
-    //
+    test_opkernel();
 
     RunThreadedTests();
     printf("Done.\n");
