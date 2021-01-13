@@ -313,8 +313,8 @@ class OpKernelContext {
   OrtValue* values_;
   MLDataType* types_;
 
-  std::vector<int> inputs_indices_;
-  std::vector<int> outputs_indices_;
+  const std::vector<int>& inputs_indices_;
+  const std::vector<int>& outputs_indices_;
 #endif
 
   const OpKernel* const kernel_;

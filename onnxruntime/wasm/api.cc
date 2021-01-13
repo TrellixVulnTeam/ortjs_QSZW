@@ -1,31 +1,32 @@
-#include <emscripten/bind.h>
-
 #include "api.h"
 
 #include "core/common/common.h"
 #include "core/framework/data_types.h"
 #include "core/framework/op_kernel_info.h"
 
+#include "core/providers/cpu/math/gemm.h"
+
 using namespace emscripten;
 
 EMSCRIPTEN_BINDINGS(inference_context) {
     class_<InferenceContext>("InferenceContext")
-        .constructor<int, std::vector<int>, int, int>()
+        .constructor<int, int, val, int, int>()
+        //.function("setTypes", &InferenceContext::SetTypes)
         .function("setInitializer", &InferenceContext::SetInitializer)
-        .function("addKernel", &InferenceContext::AddKernel)
-        .function("addAttribute_f", select_overload<void(int, const std::string&, float)>(&InferenceContext::AddAttribute))
-        .function("addAttribute_floats", select_overload<void(int, const std::string&, const std::vector<float>&)>(&InferenceContext::AddAttribute))
-        .function("addAttribute_i", select_overload<void(int, const std::string&, int)>(&InferenceContext::AddAttribute))
-        .function("addAttribute_ints", select_overload<void(int, const std::string&, const std::vector<int>&)>(&InferenceContext::AddAttribute))
-        .function("addAttribute_s", select_overload<void(int, const std::string&, const std::string&)>(&InferenceContext::AddAttribute))
+        .function("initKernel", &InferenceContext::InitKernel)
+        .function("addAttribute_f", &InferenceContext::AddAttribute_f)
+        .function("addAttribute_floats", &InferenceContext::AddAttribute_floats)
+        .function("addAttribute_i", &InferenceContext::AddAttribute_i)
+        .function("addAttribute_ints", &InferenceContext::AddAttribute_ints)
+        .function("addAttribute_s", &InferenceContext::AddAttribute_s)
         .function("setInput", &InferenceContext::SetInput)
         .function("setOutput", &InferenceContext::SetOutput)
         .function("run", &InferenceContext::Run)
         .function("getTensorData", &InferenceContext::GetTensorData, allow_raw_pointers())
+        .function("getTensorDataSize", &InferenceContext::GetTensorDataSize)
         .function("getTensorShape", &InferenceContext::GetTensorShape);
 
     register_vector<int>("vector<int>");
-    register_vector<float>("vector<float>");
 }
 
 namespace {
@@ -41,66 +42,105 @@ void CreateMLValue(onnxruntime::AllocatorPtr alloc, const std::vector<int>& dims
 }
 }
 
-InferenceContext::InferenceContext(int num_values, const std::vector<int>& data_types, int num_inputs, int num_outputs) {
-    ORT_ENFORCE(num_values == data_types.size(), "num_values doesn't match size of data_types");
+InferenceContext::InferenceContext(int num_kernels,
+                                   int num_values,
+                                   const emscripten::val& arr_data_types,
+                                   int num_inputs,
+                                   int num_outputs) {
+    std::vector<int> types = convertJSArrayToNumberVector<int>(arr_data_types);
+    ORT_ENFORCE(num_values == types.size(), "num_values doesn't match size of data_types");
     values_.resize(num_values);
     types_.resize(num_values);
     preserve_.resize(num_values);
 
+    for (size_t i = 0; i < types.size(); i++) {
+        types_[i] = onnxruntime::DataTypeImpl::TensorTypeFromONNXEnum(types[i])->GetElementType();
+    }
+
     input_indices_.resize(num_inputs);
     output_indices_.resize(num_outputs);
+
+    attributes_.resize(num_kernels);
+    kernels_.resize(num_kernels);
+    kernel_input_indices_.resize(num_kernels);
+    kernel_output_indices_.resize(num_kernels);
 
     alloc_ = std::make_shared<::onnxruntime::CPUAllocator>();
 }
 
-InferenceContext::~InferenceContext() {}
+InferenceContext::~InferenceContext() {
+    for (auto* p : kernels_) {
+      delete p;
+    }
+}
 
-void InferenceContext::SetInitializer(int index, const std::vector<int>& dims) {
+void InferenceContext::SetInitializer(int index, const val& arr_dims) {
+    std::vector<int> dims = convertJSArrayToNumberVector<int>(arr_dims);
     CreateMLValue(alloc_, dims, types_[index], &values_[index]);
     preserve_[index] = true;
 }
 
-int InferenceContext::AddKernel(const std::string& op, const std::string& opset, int opset_version, const std::string varience) {
+void InferenceContext::InitKernel(int index,
+                                  const std::string& op,
+                                  const std::string& opset,
+                                  int opset_version,
+                                  const val& arr_input_indices,
+                                  const val& arr_output_indices,
+                                  const std::string varience) {
+    ORT_ENFORCE(index >= 0 && index < kernels_.size(), "index out of range");
     // TODO
     // kernels_.emplace_back(...);
     // attributes_.emplace_back(...);
-
-    return kernels_.size() - 1;
+    
+    // naive resolve implementation
+    if (op == "Gemm") {
+        kernel_input_indices_[index] = convertJSArrayToNumberVector<int>(arr_input_indices);
+        kernel_output_indices_[index] = convertJSArrayToNumberVector<int>(arr_output_indices);
+        ::onnxruntime::OpKernelInfo info(alloc_, attributes_[index],
+                                         static_cast<int>(kernel_input_indices_[index].size()),
+                                         static_cast<int>(kernel_output_indices_[index].size()));
+        kernels_[index] = new ::onnxruntime::Gemm<float>{info};
+    } else {
+        // error
+    }
 }
 
-void InferenceContext::AddAttribute(int kernel_index, const std::string& name, float value) {
+void InferenceContext::AddAttribute_f(int kernel_index, const std::string& name, float value) {
     onnxruntime::AttributeStub attr;
     attr.set_type(ONNX_NAMESPACE::AttributeProto_AttributeType_FLOAT);
     attr.set_f(value);
     attributes_[kernel_index][name] = attr;
 }
-void InferenceContext::AddAttribute(int kernel_index, const std::string& name, const std::vector<float>& values) {
+void InferenceContext::AddAttribute_floats(int kernel_index, const std::string& name, const emscripten::val& arr_values) {
     onnxruntime::AttributeStub attr;
     attr.set_type(ONNX_NAMESPACE::AttributeProto_AttributeType_FLOATS);
+    std::vector<float> values = convertJSArrayToNumberVector<float>(arr_values);
     attr.set_floats(values);
     attributes_[kernel_index][name] = attr;
 }
-void InferenceContext::AddAttribute(int kernel_index, const std::string& name, int value) {
+void InferenceContext::AddAttribute_i(int kernel_index, const std::string& name, int value) {
     onnxruntime::AttributeStub attr;
     attr.set_type(ONNX_NAMESPACE::AttributeProto_AttributeType_INT);
     attr.set_i(value);
     attributes_[kernel_index][name] = attr;
 }
-void InferenceContext::AddAttribute(int kernel_index, const std::string& name, const std::vector<int>& values) {
+void InferenceContext::AddAttribute_ints(int kernel_index, const std::string& name, const emscripten::val& arr_values) {
     onnxruntime::AttributeStub attr;
     attr.set_type(ONNX_NAMESPACE::AttributeProto_AttributeType_INTS);
+    std::vector<int> values = convertJSArrayToNumberVector<int>(arr_values);
     attr.set_ints(std::vector<int64_t>(values.begin(), values.end()));
     attributes_[kernel_index][name] = attr;
 }
-void InferenceContext::AddAttribute(int kernel_index, const std::string& name, const std::string& value) {
+void InferenceContext::AddAttribute_s(int kernel_index, const std::string& name, const std::string& value) {
     onnxruntime::AttributeStub attr;
     attr.set_type(ONNX_NAMESPACE::AttributeProto_AttributeType_STRING);
     attr.set_s(value);
     attributes_[kernel_index][name] = attr;
 }
 
-void InferenceContext::SetInput(int index, int value_index, const std::vector<int>& dims) {
+void InferenceContext::SetInput(int index, int value_index, const emscripten::val& arr_dims) {
     input_indices_[index] = value_index;
+    std::vector<int> dims = convertJSArrayToNumberVector<int>(arr_dims);
     CreateMLValue(alloc_, dims, types_[index], &values_[value_index]);
 }
 
@@ -109,11 +149,24 @@ void InferenceContext::SetOutput(int index, int value_index) {
 }
 
 void InferenceContext::Run() {
-    // TODO
+    for (size_t i = 0; i < kernels_.size(); i++) {
+        onnxruntime::OpKernelContext ctx{values_.data(),
+                                         types_.data(),
+                                         kernels_[i],
+                                         nullptr,
+                                         kernel_input_indices_[i],
+                                         kernel_output_indices_[i]};
+        ORT_ENFORCE(kernels_[i]->Compute(&ctx).IsOK(),
+                    "failed to run kernel");
+    }
 }
 
-void* InferenceContext::GetTensorData(int index) {
-    return values_[index].GetMutable<onnxruntime::Tensor>()->MutableDataRaw();
+size_t InferenceContext::GetTensorData(int index) {
+    return reinterpret_cast<size_t>(values_[index].GetMutable<onnxruntime::Tensor>()->MutableDataRaw());
+}
+
+size_t InferenceContext::GetTensorDataSize(int index) {
+    return values_[index].GetMutable<onnxruntime::Tensor>()->Shape().Size();
 }
 
 std::vector<int> InferenceContext::GetTensorShape(int index) {

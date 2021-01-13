@@ -560,8 +560,10 @@ class TensorType : public TensorTypeBase {
 
  private:
   TensorType() {
+#if !defined(__wasm__)
     using namespace data_types_internal;
     TensorElementTypeSetter<elemT>::SetTensorElementType(this->mutable_type_proto());
+#endif
   }
 };
 
