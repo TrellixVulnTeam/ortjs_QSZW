@@ -14,6 +14,13 @@ Currently, only MLAS can be built to WASM. More parts in ORT will be built into 
 
 ### Building
 
+1. Build ONNXRuntime.
+
+    Building ONNXRuntime helps to generate `onnx-ml.pb.h` and `onnx-operators-ml.pb.h` under folder `build\Windows\{BUILD_TYPE}\onnx`. This file is required for building WebAssembly.
+
+    call `build --config {BUILD_TYPE} --minimal_build` in root folder. Supported BUILD_TYPE are Debug and Release.
+
+2. Build WebAssembly
 - Build WebAssembly MVP
    - call `build.cmd`
    - call `build.cmd debug` for debug build
