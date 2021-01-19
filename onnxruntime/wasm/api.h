@@ -47,6 +47,7 @@ private:
     std::vector<onnxruntime::OpKernel*> kernels_;
     std::vector<std::vector<int>> kernel_input_indices_;
     std::vector<std::vector<int>> kernel_output_indices_;
+    std::vector<std::vector<int>> kernel_input_arg_count_;
     std::vector<onnxruntime::NodeAttributes> attributes_;
 };
 };

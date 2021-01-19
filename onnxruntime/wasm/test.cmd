@@ -1,1 +1,1 @@
-node --experimental-wasm-simd --experimental-wasm-threads --experimental-wasm-bulk-memory ./test
+node --experimental-wasm-simd --experimental-wasm-threads --experimental-wasm-bulk-memory ./test/test.js

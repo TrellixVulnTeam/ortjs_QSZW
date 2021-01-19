@@ -23,13 +23,18 @@ namespace onnxruntime {
 //                  we just want to support functions that operators impl need.
 class NodeStub {
 public:
-  explicit NodeStub(const NodeAttributes& attributes): attributes_(attributes) {}
+  explicit NodeStub(const NodeAttributes& attributes, const std::vector<int>& input_arg_count): 
+    attributes_(attributes), input_arg_count_(input_arg_count) {}
   ~NodeStub() = default;
 
   const NodeAttributes& GetAttributes() const noexcept { return attributes_; }
+  /** Gets the count of arguments for each of the Node's explicit inputs. */
+  const std::vector<int>& InputArgCount() const noexcept { return input_arg_count_; }
 
 private:
   const NodeAttributes& attributes_;
+  // input/output defs and arg count
+  std::vector<int> input_arg_count_;
 };
 #endif
 
@@ -55,6 +60,7 @@ class OpKernelInfo : public OpNodeProtoHelper<ProtoHelperNodeContext> {
 #else
   explicit OpKernelInfo(AllocatorPtr allocator,
                         const onnxruntime::NodeAttributes& attributes,
+                        const std::vector<int>& input_arg_count,
                         size_t num_inputs,
                         size_t num_outputs);
 #endif

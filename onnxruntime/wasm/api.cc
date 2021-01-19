@@ -5,7 +5,8 @@
 #include "core/framework/op_kernel_info.h"
 
 #include "core/providers/cpu/math/gemm.h"
-
+#include "core/providers/cpu/math/element_wise_ops.h"
+#include "core/providers/cpu/tensor/concat.h"
 using namespace emscripten;
 
 EMSCRIPTEN_BINDINGS(inference_context) {
@@ -64,6 +65,7 @@ InferenceContext::InferenceContext(int num_kernels,
     kernels_.resize(num_kernels);
     kernel_input_indices_.resize(num_kernels);
     kernel_output_indices_.resize(num_kernels);
+    kernel_input_arg_count_.resize(num_kernels);
 
     alloc_ = std::make_shared<::onnxruntime::CPUAllocator>();
 }
@@ -96,12 +98,29 @@ void InferenceContext::InitKernel(int index,
     if (op == "Gemm") {
         kernel_input_indices_[index] = convertJSArrayToNumberVector<int>(arr_input_indices);
         kernel_output_indices_[index] = convertJSArrayToNumberVector<int>(arr_output_indices);
-        ::onnxruntime::OpKernelInfo info(alloc_, attributes_[index],
+        ::onnxruntime::OpKernelInfo info(alloc_, attributes_[index], kernel_input_arg_count_[index],
                                          static_cast<int>(kernel_input_indices_[index].size()),
                                          static_cast<int>(kernel_output_indices_[index].size()));
         kernels_[index] = new ::onnxruntime::Gemm<float>{info};
-    } else {
+    } else if (op == "Add") {
         // error
+        kernel_input_indices_[index] = convertJSArrayToNumberVector<int>(arr_input_indices);
+        kernel_output_indices_[index] = convertJSArrayToNumberVector<int>(arr_output_indices);
+        ::onnxruntime::OpKernelInfo info(alloc_, attributes_[index], kernel_input_arg_count_[index],
+                                         static_cast<int>(kernel_input_indices_[index].size()),
+                                         static_cast<int>(kernel_output_indices_[index].size()));
+        kernels_[index] = new ::onnxruntime::Add<float>{info};
+    } else if (op == "Concat") {
+        // error
+        kernel_input_indices_[index] = convertJSArrayToNumberVector<int>(arr_input_indices);
+        kernel_output_indices_[index] = convertJSArrayToNumberVector<int>(arr_output_indices);
+        kernel_input_arg_count_[index].push_back(kernel_input_indices_[index].size());
+        ::onnxruntime::OpKernelInfo info(alloc_, attributes_[index], kernel_input_arg_count_[index],
+                                         static_cast<int>(kernel_input_indices_[index].size()),
+                                         static_cast<int>(kernel_output_indices_[index].size()));
+        kernels_[index] = new ::onnxruntime::Concat{info};
+    } else {
+        //error
     }
 }
 

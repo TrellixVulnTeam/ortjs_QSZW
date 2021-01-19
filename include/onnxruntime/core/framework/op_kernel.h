@@ -41,10 +41,13 @@ class OpKernel {
   const onnxruntime::Node& Node() const {
     return op_kernel_info_.node();
   }
-
   const onnxruntime::KernelDef& KernelDef() const {
     return op_kernel_info_.GetKernelDef();
   }
+#else 
+  const onnxruntime::NodeStub& Node() const {
+    return op_kernel_info_.node();
+  }  
 #endif
 
   virtual Status Compute(_Inout_ OpKernelContext* context) const ORT_MUST_USE_RESULT = 0;

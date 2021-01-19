@@ -81,6 +81,9 @@ const SOURCE_FILES = [
 
     // OPs
     `${ORT_FOLDER}/onnxruntime/core/providers/cpu/math/gemm.cc`,
+    // Add HERE!!!
+    `${ORT_FOLDER}/onnxruntime/core/providers/cpu/math/element_wise_ops.cc`,
+    `${ORT_FOLDER}/onnxruntime/core/providers/cpu/tensor/concat.cc`,
     `${ORT_FOLDER}/onnxruntime/core/util/math_cpu.cc`,
 
     // utils

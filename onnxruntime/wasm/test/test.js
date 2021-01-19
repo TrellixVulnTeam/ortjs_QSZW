@@ -1,7 +1,9 @@
-const wasm_factory = require('./out_wasm_main');
+const wasm_factory = require('../out_wasm_main');
+const add_tests = require('./test_add');
+const concat_tests = require('./test_concat');
 
-wasm_factory().then((o) => {
-
+function _test_gemm(o) {
+    console.log("==== GEMM test starts. ====")
     const InferenceContext = o.InferenceContext;
 
     // val[0]: A - [3, 4]
@@ -40,10 +42,12 @@ wasm_factory().then((o) => {
                   [0, 1], [2],    // inputs idx, output idx
                   "");
 
+    // init set one time. 
     const offset_1 = f1.getTensorData(1);
     const size_1 = f1.getTensorDataSize(1);
     new Float32Array(o.HEAPU8.buffer, offset_1, size_1).set(B);
 
+    // can set multiple. 
     const offset_0 = f1.getTensorData(0);
     const size_0 = f1.getTensorDataSize(0);
     new Float32Array(o.HEAPU8.buffer, offset_0, size_0).set(A);
@@ -54,7 +58,17 @@ wasm_factory().then((o) => {
     const size_2 = f1.getTensorDataSize(2);
     const c_out = new Float32Array(o.HEAPU8.buffer, offset_2, size_2);
     C.set(new Float32Array(o.HEAPU8.buffer, offset_2, size_2));
+    console.log(C)
+    console.log("==== GEMM test complete. ====")
 
+}
+
+
+wasm_factory().then((o) => {
+
+    _test_gemm(o);
+    add_tests(o);
+    concat_tests(o);
 });
 
 //wasm_factory();
