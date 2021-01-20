@@ -7,6 +7,9 @@
 #include "core/providers/cpu/math/gemm.h"
 #include "core/providers/cpu/math/element_wise_ops.h"
 #include "core/providers/cpu/tensor/concat.h"
+#include "core/providers/cpu/tensor/gather.h"
+#include "core/providers/cpu/math/matmul.h"
+
 using namespace emscripten;
 
 EMSCRIPTEN_BINDINGS(inference_context) {
@@ -103,7 +106,6 @@ void InferenceContext::InitKernel(int index,
                                          static_cast<int>(kernel_output_indices_[index].size()));
         kernels_[index] = new ::onnxruntime::Gemm<float>{info};
     } else if (op == "Add") {
-        // error
         kernel_input_indices_[index] = convertJSArrayToNumberVector<int>(arr_input_indices);
         kernel_output_indices_[index] = convertJSArrayToNumberVector<int>(arr_output_indices);
         ::onnxruntime::OpKernelInfo info(alloc_, attributes_[index], kernel_input_arg_count_[index],
@@ -111,7 +113,6 @@ void InferenceContext::InitKernel(int index,
                                          static_cast<int>(kernel_output_indices_[index].size()));
         kernels_[index] = new ::onnxruntime::Add<float>{info};
     } else if (op == "Concat") {
-        // error
         kernel_input_indices_[index] = convertJSArrayToNumberVector<int>(arr_input_indices);
         kernel_output_indices_[index] = convertJSArrayToNumberVector<int>(arr_output_indices);
         kernel_input_arg_count_[index].push_back(kernel_input_indices_[index].size());
@@ -119,6 +120,20 @@ void InferenceContext::InitKernel(int index,
                                          static_cast<int>(kernel_input_indices_[index].size()),
                                          static_cast<int>(kernel_output_indices_[index].size()));
         kernels_[index] = new ::onnxruntime::Concat{info};
+    } else if (op == "Gather") {
+        kernel_input_indices_[index] = convertJSArrayToNumberVector<int>(arr_input_indices);
+        kernel_output_indices_[index] = convertJSArrayToNumberVector<int>(arr_output_indices);
+        ::onnxruntime::OpKernelInfo info(alloc_, attributes_[index], kernel_input_arg_count_[index],
+                                         static_cast<int>(kernel_input_indices_[index].size()),
+                                         static_cast<int>(kernel_output_indices_[index].size()));
+        kernels_[index] = new ::onnxruntime::Gather{info};
+    } else if (op == "MatMul") {
+        kernel_input_indices_[index] = convertJSArrayToNumberVector<int>(arr_input_indices);
+        kernel_output_indices_[index] = convertJSArrayToNumberVector<int>(arr_output_indices);
+        ::onnxruntime::OpKernelInfo info(alloc_, attributes_[index], kernel_input_arg_count_[index],
+                                         static_cast<int>(kernel_input_indices_[index].size()),
+                                         static_cast<int>(kernel_output_indices_[index].size()));
+        kernels_[index] = new ::onnxruntime::MatMul<float>{info};
     } else {
         //error
     }
