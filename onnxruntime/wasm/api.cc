@@ -27,7 +27,7 @@ EMSCRIPTEN_BINDINGS(inference_context) {
         .function("addAttribute_s", &InferenceContext::AddAttribute_s)
         .function("setInput", &InferenceContext::SetInput)
         .function("run", &InferenceContext::Run)
-        .function("getTensorData", &InferenceContext::GetTensorData, allow_raw_pointers())
+        .function("getTensorData", &InferenceContext::GetTensorData)
         .function("getTensorDataSize", &InferenceContext::GetTensorDataSize)
         .function("getTensorShape", &InferenceContext::GetTensorShape);
 
@@ -220,7 +220,7 @@ size_t InferenceContext::GetTensorDataSize(int index) {
     return values_[index].GetMutable<onnxruntime::Tensor>()->Shape().Size();
 }
 
-std::vector<int> InferenceContext::GetTensorShape(int index) {
-    auto &shape = values_[index].Get<onnxruntime::Tensor>().Shape();
-    return std::vector<int>(shape.GetDims().begin(), shape.GetDims().end());
+emscripten::val InferenceContext::GetTensorShape(int index) {
+    auto &shape = values_[index].Get<onnxruntime::Tensor>().Shape().GetDims();
+    return emscripten::val::array(std::vector<int>(shape.begin(), shape.end()));
 }

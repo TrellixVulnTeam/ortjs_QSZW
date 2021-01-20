@@ -32,7 +32,7 @@ public:
 
     size_t GetTensorData(int index);
     size_t GetTensorDataSize(int index);
-    std::vector<int> GetTensorShape(int index);
+    emscripten::val GetTensorShape(int index);
 
 private:
     std::vector<OrtValue> values_;
