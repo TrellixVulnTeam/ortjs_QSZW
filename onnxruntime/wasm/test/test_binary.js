@@ -16,16 +16,7 @@ function _test_binary(o, op) {
     const f1 = new InferenceContext(1,  // num operators
                                     3,  // num values
                                     [1, 1, 1], // value types
-                                    1,  // num model inputs
-                                    1   // num model output 
                                     );
-
-    f1.setInput(0,        // input idx
-                0,        // value idx
-                [3, 4]);  // shape
-    
-    f1.setOutput(0,       // output idx
-                 2);      // value idx
 
     f1.setInitializer(1,             // value index
                       [3, 4]);       // dim
@@ -33,6 +24,9 @@ function _test_binary(o, op) {
     f1.initKernel(0, op, "", 7,  // op, opset, opset_ver
                   [0, 1], [2],    // inputs idx, output idx
                   "");
+
+    f1.setInput(0,        // value idx
+                [3, 4]);  // shape
 
     const offset_1 = f1.getTensorData(1);
     const size_1 = f1.getTensorDataSize(1);
@@ -70,24 +64,17 @@ function _test_binary_with_broadcast(o, op) {
     const f1 = new InferenceContext(1,  // num operators
                                     3,  // num values
                                     [1, 1, 1], // value types
-                                    1,  // num model inputs
-                                    1   // num model output 
                                     );
-
-    f1.setInput(0,        // input idx
-                0,        // value idx
-                [3, 4]);  // shape
-    
-    f1.setOutput(0,       // output idx
-                 2);      // value idx
 
     f1.setInitializer(1,             // value index
                       [1, 4]);       // dim
-    
 
     f1.initKernel(0, op, "", 7,  // op, opset, opset_ver
                   [0, 1], [2],    // inputs idx, output idx
                   "");
+
+    f1.setInput(0,        // value idx
+                [3, 4]);  // shape
 
     const offset_1 = f1.getTensorData(1);
     const size_1 = f1.getTensorDataSize(1);

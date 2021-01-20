@@ -15,28 +15,21 @@ function _test_gather_1d(o) {
 
     const f1 = new InferenceContext(1,  // num operators
                                     3,  // num values
-                                    [6, 6, 6], // value types
-                                    2,  // num model inputs
-                                    1   // num model output 
+                                    [6, 6, 6] // value types
                                     );
 
-    f1.setInput(0,        // input idx
-                0,        // value idx
-                [6]);  // shape
-
-    f1.setInput(1,        // input idx
-                1,        // value idx
-                [3]);  // shape
-    
-    f1.setOutput(0,       // output idx
-                 2);      // value idx
-    
     f1.addAttribute_i(0, "axis", 0);
 
     f1.initKernel(0, "Gather", "", 11,  // op, opset, opset_ver
                   [0, 1], [2],    // inputs idx, output idx
                   "");
 
+    f1.setInput(0,        // value idx
+                [6]);  // shape
+
+    f1.setInput(1,        // value idx
+                [3]);  // shape
+    
     const offset_1 = f1.getTensorData(1);
     const size_1 = f1.getTensorDataSize(1);
     new Int32Array(o.HEAPU8.buffer, offset_1, size_1).set(B);
@@ -72,28 +65,21 @@ function _test_gather_2d_axis_0(o) {
 
     const f1 = new InferenceContext(1,  // num operators
                                     3,  // num values
-                                    [1, 6, 1], // value types
-                                    2,  // num model inputs
-                                    1   // num model output 
+                                    [1, 6, 1] // value types
                                     );
 
-    f1.setInput(0,        // input idx
-                0,        // value idx
-                [3, 2]);  // shape
-
-    f1.setInput(1,        // input idx
-                1,        // value idx
-                [2, 2]);  // shape
-    
-    f1.setOutput(0,       // output idx
-                 2);      // value idx
-    
     f1.addAttribute_i(0, "axis", 0);
 
     f1.initKernel(0, "Gather", "", 11,  // op, opset, opset_ver
                   [0, 1], [2],    // inputs idx, output idx
                   "");
 
+    f1.setInput(0,        // value idx
+                [3, 2]);  // shape
+
+    f1.setInput(1,        // value idx
+                [2, 2]);  // shape
+    
     const offset_1 = f1.getTensorData(1);
     const size_1 = f1.getTensorDataSize(1);
     new Int32Array(o.HEAPU8.buffer, offset_1, size_1).set(B);

@@ -24,16 +24,7 @@ function _test_gemm(o) {
     const f1 = new InferenceContext(1,  // num operators
                                     3,  // num values
                                     [1, 1, 1], // value types
-                                    1,  // num model inputs
-                                    1   // num model output 
                                     );
-
-    f1.setInput(0,        // input idx
-                0,        // value idx
-                [3, 4]);  // shape
-    
-    f1.setOutput(0,       // output idx
-                 2);      // value idx
 
     f1.setInitializer(1,             // value index
                       [4, 5]);       // dim
@@ -52,11 +43,15 @@ function _test_gemm(o) {
     const size_1 = f1.getTensorDataSize(1);
     new Float32Array(o.HEAPU8.buffer, offset_1, size_1).set(B);
 
+    f1.setInput(0,        // value idx
+                [3, 4]);  // shape
+
     // can set multiple. 
     const offset_0 = f1.getTensorData(0);
     const size_0 = f1.getTensorDataSize(0);
     new Float32Array(o.HEAPU8.buffer, offset_0, size_0).set(A);
     
+
     f1.run();
 
     const offset_2 = f1.getTensorData(2);

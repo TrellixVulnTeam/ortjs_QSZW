@@ -16,7 +16,7 @@ using namespace emscripten;
 
 EMSCRIPTEN_BINDINGS(inference_context) {
     class_<InferenceContext>("InferenceContext")
-        .constructor<int, int, val, int, int>()
+        .constructor<int, int, val>()
         //.function("setTypes", &InferenceContext::SetTypes)
         .function("setInitializer", &InferenceContext::SetInitializer)
         .function("initKernel", &InferenceContext::InitKernel)
@@ -26,7 +26,6 @@ EMSCRIPTEN_BINDINGS(inference_context) {
         .function("addAttribute_ints", &InferenceContext::AddAttribute_ints)
         .function("addAttribute_s", &InferenceContext::AddAttribute_s)
         .function("setInput", &InferenceContext::SetInput)
-        .function("setOutput", &InferenceContext::SetOutput)
         .function("run", &InferenceContext::Run)
         .function("getTensorData", &InferenceContext::GetTensorData, allow_raw_pointers())
         .function("getTensorDataSize", &InferenceContext::GetTensorDataSize)
@@ -50,9 +49,7 @@ void CreateMLValue(onnxruntime::AllocatorPtr alloc, const std::vector<int>& dims
 
 InferenceContext::InferenceContext(int num_kernels,
                                    int num_values,
-                                   const emscripten::val& arr_data_types,
-                                   int num_inputs,
-                                   int num_outputs) {
+                                   const emscripten::val& arr_data_types) {
     std::vector<int> types = convertJSArrayToNumberVector<int>(arr_data_types);
     ORT_ENFORCE(num_values == types.size(), "num_values doesn't match size of data_types");
     values_.resize(num_values);
@@ -62,9 +59,6 @@ InferenceContext::InferenceContext(int num_kernels,
     for (size_t i = 0; i < types.size(); i++) {
         types_[i] = onnxruntime::DataTypeImpl::TensorTypeFromONNXEnum(types[i])->GetElementType();
     }
-
-    input_indices_.resize(num_inputs);
-    output_indices_.resize(num_outputs);
 
     attributes_.resize(num_kernels);
     kernels_.resize(num_kernels);
@@ -200,14 +194,9 @@ void InferenceContext::AddAttribute_s(int kernel_index, const std::string& name,
     attributes_[kernel_index][name] = attr;
 }
 
-void InferenceContext::SetInput(int index, int value_index, const emscripten::val& arr_dims) {
-    input_indices_[index] = value_index;
+void InferenceContext::SetInput(int index, const emscripten::val& arr_dims) {
     std::vector<int> dims = convertJSArrayToNumberVector<int>(arr_dims);
-    CreateMLValue(alloc_, dims, types_[index], &values_[value_index]);
-}
-
-void InferenceContext::SetOutput(int index, int value_index) {
-    output_indices_[index] = value_index;
+    CreateMLValue(alloc_, dims, types_[index], &values_[index]);
 }
 
 void InferenceContext::Run() {

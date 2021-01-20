@@ -14,10 +14,11 @@ extern "C" {
 
 class InferenceContext {
 public:
-    InferenceContext(int num_kernels, int num_values, const emscripten::val& arr_data_types, int num_inputs, int num_outputs);
+    InferenceContext(int num_kernels, int num_values, const emscripten::val& arr_data_types);
     ~InferenceContext();
 
     void SetInitializer(int index, const emscripten::val& arr_dims);
+    void SetInput(int index, const emscripten::val& arr_dims);
     void InitKernel(int index, const std::string& op, const std::string& opset, int opset_version,
                     const emscripten::val& arr_input_indices, const emscripten::val& arr_output_indices, const std::string varience);
 
@@ -27,8 +28,6 @@ public:
     void AddAttribute_ints(int kernel_index, const std::string& name, const emscripten::val& arr_values);
     void AddAttribute_s(int kernel_index, const std::string& name, const std::string& value);
 
-    void SetInput(int index, int value_index, const emscripten::val& arr_dims);
-    void SetOutput(int index, int value_index);
     void Run();
 
     size_t GetTensorData(int index);
@@ -39,9 +38,6 @@ private:
     std::vector<OrtValue> values_;
     std::vector<onnxruntime::MLDataType> types_;
     std::vector<bool> preserve_;
-
-    std::vector<int> input_indices_;
-    std::vector<int> output_indices_;
 
     onnxruntime::AllocatorPtr alloc_;
     std::vector<onnxruntime::OpKernel*> kernels_;

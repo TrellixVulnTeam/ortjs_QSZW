@@ -15,17 +15,8 @@ function _test_matmul(o) {
 
     const f1 = new InferenceContext(1,  // num operators
                                     3,  // num values
-                                    [1, 1, 1], // value types
-                                    1,  // num model inputs
-                                    1   // num model output 
+                                    [1, 1, 1] // value types
                                     );
-
-    f1.setInput(0,        // input idx
-                0,        // value idx
-                [3, 4]);  // shape
-    
-    f1.setOutput(0,       // output idx
-                 2);      // value idx
 
     f1.setInitializer(1,             // value index
                       [4, 3]);       // dim
@@ -38,6 +29,9 @@ function _test_matmul(o) {
                   [0, 1], [2],    // inputs idx, output idx
                   "");
 
+    f1.setInput(0,        // value idx
+                [3, 4]);  // shape
+    
     const offset_1 = f1.getTensorData(1);
     const size_1 = f1.getTensorDataSize(1);
     new Float32Array(o.HEAPU8.buffer, offset_1, size_1).set(B);

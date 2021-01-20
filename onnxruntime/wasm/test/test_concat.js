@@ -16,26 +16,19 @@ function _test_concat(o) {
     const f1 = new InferenceContext(1,  // num operators
                                     3,  // num values
                                     [1, 1, 1], // value types
-                                    2,  // num model inputs
-                                    1   // num model output 
                                     );
-
-    f1.setInput(0,        // input idx
-                0,        // value idx
-                [3, 4]);  // shape
-
-    f1.setInput(1,        // input idx
-                1,        // value idx
-                [3, 4]);  // shape
-    
-    f1.setOutput(0,       // output idx
-                 2);      // value idx
 
     f1.addAttribute_i(0, "axis", 0);
 
     f1.initKernel(0, "Concat", "", 7,  // op, opset, opset_ver
                   [0, 1], [2],    // inputs idx, output idx
                   "");
+
+    f1.setInput(0,        // value idx
+                [3, 4]);  // shape
+
+    f1.setInput(1,        // value idx
+                [3, 4]);  // shape
 
     const offset_1 = f1.getTensorData(1);
     const size_1 = f1.getTensorDataSize(1);
@@ -76,24 +69,7 @@ function _test_concat_3_inputs(o) {
     const f1 = new InferenceContext(1,  // num operators
                                     4,  // num values
                                     [1, 1, 1, 1], // value types
-                                    3,  // num model inputs
-                                    1   // num model output 
                                     );
-
-    f1.setInput(0,        // input idx
-                0,        // value idx
-                [3, 4]);  // shape
-
-    f1.setInput(1,        // input idx
-                1,        // value idx
-                [3, 4]);  // shape
-
-    f1.setInput(2,        // input idx
-                2,        // value idx
-                [3, 4]);  // shape
-    
-    f1.setOutput(0,       // output idx
-                 3);      // value idx
 
     f1.addAttribute_i(0, "axis", 0);
 
@@ -101,6 +77,15 @@ function _test_concat_3_inputs(o) {
                   [0, 1, 2], [3],    // inputs idx, output idx
                   "");
 
+    f1.setInput(0,        // value idx
+                [3, 4]);  // shape
+
+    f1.setInput(1,        // value idx
+                [3, 4]);  // shape
+
+    f1.setInput(2,        // value idx
+                [3, 4]);  // shape
+    
     const offset_0 = f1.getTensorData(0);
     const size_0 = f1.getTensorDataSize(0);
     new Float32Array(o.HEAPU8.buffer, offset_0, size_0).set(A);

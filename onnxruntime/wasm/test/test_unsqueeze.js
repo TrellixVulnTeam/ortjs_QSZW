@@ -12,24 +12,18 @@ function _test_unsqueeze(o) {
 
     const f1 = new InferenceContext(1,  // num operators
                                     2,  // num values
-                                    [6, 6], // value types
-                                    1,  // num model inputs
-                                    1   // num model output 
+                                    [6, 6] // value types
                                     );
 
-    f1.setInput(0,        // input idx
-                0,        // value idx
-                [3, 4]);  // shape
-    
-    f1.setOutput(0,       // output idx
-                 1);      // value idx
-    
     f1.addAttribute_i(0, "axes", 1);
 
     f1.initKernel(0, "Unsqueeze", "", 9,  // op, opset, opset_ver
                   [0], [1],    // inputs idx, output idx
                   "");
 
+    f1.setInput(0,        // value idx
+                [3, 4]);  // shape
+    
 
 
     const offset_0 = f1.getTensorData(0);
