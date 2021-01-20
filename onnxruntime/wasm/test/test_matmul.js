@@ -1,5 +1,5 @@
 function _test_matmul(o) {
-    console.log("==== MATMUL test starts. ====")
+    console.log("==== MATMUL test starts. ====");
 
     const InferenceContext = o.InferenceContext;
 
@@ -53,7 +53,7 @@ function _test_matmul(o) {
     const c_out = new Float32Array(o.HEAPU8.buffer, offset_2, size_2);
     C.set(new Float32Array(o.HEAPU8.buffer, offset_2, size_2));
     console.log(C);
-    console.log("==== MATMUL test complete. ====")
+    console.log("==== MATMUL test complete. ====");
 }
 
 module.exports = function (o) {

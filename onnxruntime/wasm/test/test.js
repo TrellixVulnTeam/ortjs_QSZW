@@ -1,11 +1,14 @@
 const wasm_factory = require('../out_wasm_main');
-const add_tests = require('./test_add');
+const binary_tests = require('./test_binary');
 const concat_tests = require('./test_concat');
 const gather_tests = require('./test_gather');
 const matmul_tests = require('./test_matmul');
+const slice_tests = require('./test_slice');
+const unsqueeze_tests = require('./test_unsqueeze');
+
 
 function _test_gemm(o) {
-    console.log("==== GEMM test starts. ====")
+    console.log("==== GEMM test starts. ====");
     const InferenceContext = o.InferenceContext;
 
     // val[0]: A - [3, 4]
@@ -60,8 +63,8 @@ function _test_gemm(o) {
     const size_2 = f1.getTensorDataSize(2);
     const c_out = new Float32Array(o.HEAPU8.buffer, offset_2, size_2);
     C.set(new Float32Array(o.HEAPU8.buffer, offset_2, size_2));
-    console.log(C)
-    console.log("==== GEMM test complete. ====")
+    console.log(C);
+    console.log("==== GEMM test complete. ====");
 
 }
 
@@ -69,10 +72,13 @@ function _test_gemm(o) {
 wasm_factory().then((o) => {
 
     _test_gemm(o);
-    add_tests(o);
+    binary_tests(o, "Add");
+    binary_tests(o, "Mul");
     concat_tests(o);
     gather_tests(o);
     matmul_tests(o);
+    slice_tests(o);
+    unsqueeze_tests(o);
 });
 
 //wasm_factory();

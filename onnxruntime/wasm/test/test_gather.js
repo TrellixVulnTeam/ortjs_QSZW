@@ -56,7 +56,7 @@ function _test_gather_1d(o) {
 }
 
 function _test_gather_2d_axis_0(o) {
-    console.log("==== GATHER_2d test starts. ====")
+    console.log("==== GATHER_2d test starts. ====");
 
     const InferenceContext = o.InferenceContext;
 
@@ -109,7 +109,7 @@ function _test_gather_2d_axis_0(o) {
     const c_out = new Float32Array(o.HEAPU8.buffer, offset_2, size_2);
     C.set(new Float32Array(o.HEAPU8.buffer, offset_2, size_2));
     console.log(C);
-    console.log("==== GATHER_2d test complete. ====")
+    console.log("==== GATHER_2d test complete. ====");
 }
 module.exports = function (o) {
     _test_gather_1d(o);

@@ -87,7 +87,9 @@ const SOURCE_FILES = [
     `${ORT_FOLDER}/onnxruntime/core/util/math_cpu.cc`,
     `${ORT_FOLDER}/onnxruntime/core/providers/cpu/tensor/gather.cc`,
     `${ORT_FOLDER}/onnxruntime/core/providers/cpu/math/matmul.cc`,
-
+    `${ORT_FOLDER}/onnxruntime/core/providers/cpu/tensor/slice.cc`,
+    `${ORT_FOLDER}/onnxruntime/core/providers/cpu/tensor/unsqueeze.cc`,
+    
     // utils
     `${ORT_FOLDER}/onnxruntime/wasm/api.cc`,
     `${ORT_FOLDER}/onnxruntime/wasm/utils.cc`,

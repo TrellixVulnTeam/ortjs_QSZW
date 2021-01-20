@@ -1,5 +1,5 @@
-function _test_add(o) {
-    console.log("==== ADD test starts. ====")
+function _test_binary(o, op) {
+    console.log("==== %s test starts. ====", op);
 
     const InferenceContext = o.InferenceContext;
 
@@ -30,7 +30,7 @@ function _test_add(o) {
     f1.setInitializer(1,             // value index
                       [3, 4]);       // dim
 
-    f1.initKernel(0, "Add", "", 7,  // op, opset, opset_ver
+    f1.initKernel(0, op, "", 7,  // op, opset, opset_ver
                   [0, 1], [2],    // inputs idx, output idx
                   "");
 
@@ -49,16 +49,16 @@ function _test_add(o) {
     const c_out = new Float32Array(o.HEAPU8.buffer, offset_2, size_2);
     C.set(new Float32Array(o.HEAPU8.buffer, offset_2, size_2));
     console.log(C);
-    console.log("==== ADD test complete. ====")
+    console.log("==== %s test complete. ====", op);
 }
 
-function _test_add_with_broadcast(o) {
-    console.log("==== ADD_with_broadcast test starts. ====")
+function _test_binary_with_broadcast(o, op) {
+    console.log("==== %s_with_broadcast test starts. ====", op);
 
     const InferenceContext = o.InferenceContext;
 
     // val[0]: A - [3, 4]
-    // val[1]: B - [3, 4]
+    // val[1]: B - [1, 4]
     // val[2]: C - [3, 4]
 
     const A = new Float32Array(12);
@@ -85,7 +85,7 @@ function _test_add_with_broadcast(o) {
                       [1, 4]);       // dim
     
 
-    f1.initKernel(0, "Add", "", 7,  // op, opset, opset_ver
+    f1.initKernel(0, op, "", 7,  // op, opset, opset_ver
                   [0, 1], [2],    // inputs idx, output idx
                   "");
 
@@ -107,7 +107,7 @@ function _test_add_with_broadcast(o) {
     console.log("==== ADD_with_broadcast test complete. ====");
 }
 
-module.exports = function (o) {
-    _test_add(o);
-    _test_add_with_broadcast(o);
+module.exports = function (o, op) {
+    _test_binary(o, op);
+    _test_binary_with_broadcast(o, op);
 }
