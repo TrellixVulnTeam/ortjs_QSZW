@@ -11,6 +11,10 @@
 #include "core/providers/cpu/math/matmul.h"
 #include "core/providers/cpu/tensor/slice.h"
 #include "core/providers/cpu/tensor/unsqueeze.h"
+#include "core/providers/cpu/tensor/reshape.h"
+#include "core/providers/cpu/element_wise_ranged_transform.h"
+#include "core/providers/cpu/activation/activations.h"
+#include "core/mlas/inc/mlas.h"
 
 using namespace emscripten;
 
@@ -137,6 +141,20 @@ void InferenceContext::InitKernel(int index,
                                          static_cast<int>(kernel_input_indices_[index].size()),
                                          static_cast<int>(kernel_output_indices_[index].size()));
         kernels_[index] = new ::onnxruntime::Mul<float>{info};
+    }  else if (op == "Reshape") {
+        kernel_input_indices_[index] = convertJSArrayToNumberVector<int>(arr_input_indices);
+        kernel_output_indices_[index] = convertJSArrayToNumberVector<int>(arr_output_indices);
+        ::onnxruntime::OpKernelInfo info(alloc_, attributes_[index], kernel_input_arg_count_[index],
+                                         static_cast<int>(kernel_input_indices_[index].size()),
+                                         static_cast<int>(kernel_output_indices_[index].size()));
+        kernels_[index] = new ::onnxruntime::Reshape{info};
+    } else if (op == "Sigmoid") {
+        kernel_input_indices_[index] = convertJSArrayToNumberVector<int>(arr_input_indices);
+        kernel_output_indices_[index] = convertJSArrayToNumberVector<int>(arr_output_indices);
+        ::onnxruntime::OpKernelInfo info(alloc_, attributes_[index], kernel_input_arg_count_[index],
+                                         static_cast<int>(kernel_input_indices_[index].size()),
+                                         static_cast<int>(kernel_output_indices_[index].size()));
+        kernels_[index] = new ::onnxruntime::ElementWiseKernel<::onnxruntime::functors::Sigmoid<float>>{info};
     } else if (op == "Slice") {
         kernel_input_indices_[index] = convertJSArrayToNumberVector<int>(arr_input_indices);
         kernel_output_indices_[index] = convertJSArrayToNumberVector<int>(arr_output_indices);
@@ -149,6 +167,13 @@ void InferenceContext::InitKernel(int index,
             // TODO
             // kernels_[index] = new ::onnxruntime::Slice10{info};
         }
+    } else if (op == "Tanh") {
+        kernel_input_indices_[index] = convertJSArrayToNumberVector<int>(arr_input_indices);
+        kernel_output_indices_[index] = convertJSArrayToNumberVector<int>(arr_output_indices);
+        ::onnxruntime::OpKernelInfo info(alloc_, attributes_[index], kernel_input_arg_count_[index],
+                                         static_cast<int>(kernel_input_indices_[index].size()),
+                                         static_cast<int>(kernel_output_indices_[index].size()));
+        kernels_[index] = new ::onnxruntime::ElementWiseKernel<::onnxruntime::functors::Tanh<float>>{info};
     } else if (op == "Unsqueeze") {
         kernel_input_indices_[index] = convertJSArrayToNumberVector<int>(arr_input_indices);
         kernel_output_indices_[index] = convertJSArrayToNumberVector<int>(arr_output_indices);
