@@ -15,7 +15,7 @@ function _test_unsqueeze(o) {
                                     [6, 6] // value types
                                     );
 
-    f1.addAttribute_i(0, "axes", 1);
+    f1.addAttribute_ints(0, "axes", [2]);
 
     f1.initKernel(0, "Unsqueeze", "", 9,  // op, opset, opset_ver
                   [0], [1],    // inputs idx, output idx

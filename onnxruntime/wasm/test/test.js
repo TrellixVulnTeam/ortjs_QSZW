@@ -5,6 +5,8 @@ const gather_tests = require('./test_gather');
 const matmul_tests = require('./test_matmul');
 const slice_tests = require('./test_slice');
 const unsqueeze_tests = require('./test_unsqueeze');
+const reshape_tests = require('./test_reshape');
+const activation_tests = require('./test_activations');
 
 
 function _test_gemm(o) {
@@ -74,6 +76,8 @@ wasm_factory().then((o) => {
     matmul_tests(o);
     slice_tests(o);
     unsqueeze_tests(o);
+    reshape_tests(o);
+    activation_tests(o);
 });
 
 //wasm_factory();

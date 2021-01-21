@@ -1,5 +1,5 @@
 function _test_concat(o) {
-    console.log("==== CONCAT test starts. ====")
+    console.log("==== CONCAT test starts. ====");
 
     const InferenceContext = o.InferenceContext;
 
@@ -45,11 +45,11 @@ function _test_concat(o) {
     const c_out = new Float32Array(o.HEAPU8.buffer, offset_2, size_2);
     C.set(new Float32Array(o.HEAPU8.buffer, offset_2, size_2));
     console.log(C);
-    console.log("==== CONCAT test complete. ====")
+    console.log("==== CONCAT test complete. ====");
 }
 
 function _test_concat_3_inputs(o) {
-    console.log("==== CONCAT test starts. ====")
+    console.log("==== CONCAT test starts. ====");
 
     const InferenceContext = o.InferenceContext;
 
@@ -105,7 +105,7 @@ function _test_concat_3_inputs(o) {
     const d_out = new Float32Array(o.HEAPU8.buffer, offset_3, size_3);
     D.set(new Float32Array(o.HEAPU8.buffer, offset_3, size_3));
     console.log(D);
-    console.log("==== CONCAT test complete. ====")
+    console.log("==== CONCAT test complete. ====");
 }
 
 module.exports = function (o) {

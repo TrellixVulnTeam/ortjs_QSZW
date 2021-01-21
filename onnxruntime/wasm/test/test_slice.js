@@ -70,7 +70,7 @@ function _test_slice10(o) {
                   "");
 
     f1.setInput(0,        // value idx
-                [4, 3]);  // shape
+                [3, 4]);  // shape
     // starts
     f1.setInput(1,        // value idx
                 [2]);  // shape

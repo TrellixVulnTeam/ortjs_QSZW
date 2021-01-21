@@ -1,5 +1,5 @@
 function _test_gather_1d(o) {
-    console.log("==== GATHER_1d test starts. ====")
+    console.log("==== GATHER_1d test starts. ====");
 
     const InferenceContext = o.InferenceContext;
 
@@ -45,7 +45,7 @@ function _test_gather_1d(o) {
     const c_out = new Int32Array(o.HEAPU8.buffer, offset_2, size_2);
     C.set(new Int32Array(o.HEAPU8.buffer, offset_2, size_2));
     console.log(C);
-    console.log("==== GATHER_1d test complete. ====")
+    console.log("==== GATHER_1d test complete. ====");
 }
 
 function _test_gather_2d_axis_0(o) {
