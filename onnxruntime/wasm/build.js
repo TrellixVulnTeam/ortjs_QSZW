@@ -154,6 +154,7 @@ if (BUILD_TYPE === 'Debug') {
 `
 } else {
     args += `
+-DNDEBUG
 -s VERBOSE=0
 -s ASSERTIONS=0
 -O3                                                          

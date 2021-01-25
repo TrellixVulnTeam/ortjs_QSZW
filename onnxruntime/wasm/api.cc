@@ -232,8 +232,21 @@ void InferenceContext::Run() {
                                          nullptr,
                                          kernel_input_indices_[i],
                                          kernel_output_indices_[i]};
+#ifndef NDEBUG
+        printf("running kernel %d\n", (int)(i));
+        for (size_t j = 0; j < kernel_input_indices_[i].size(); j++) {
+            auto t = ctx.Input<onnxruntime::Tensor>(j);
+            std::cout<<"input"<<j<<" ["<<kernel_input_indices_[i][j]<<"/"<<values_.size()<<"]: "<<t->Shape().ToString()<<" "<<t->DataRaw()<<std::endl;
+        }
+#endif
         ORT_ENFORCE(kernels_[i]->Compute(&ctx).IsOK(),
                     "failed to run kernel");
+#ifndef NDEBUG
+        for (size_t j = 0; j < kernel_output_indices_[i].size(); j++) {
+            auto &t = values_[kernel_output_indices_[i][j]].Get<onnxruntime::Tensor>();
+            std::cout<<"output"<<j<<" ["<<kernel_output_indices_[i][j]<<"/"<<values_.size()<<"]: "<<t.Shape().ToString()<<" "<<t.DataRaw()<<std::endl;
+        }
+#endif
     }
 }
 
