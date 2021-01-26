@@ -94,7 +94,7 @@ function _test_slice10(o) {
     const size_3 = f1.getTensorDataSize(3);
     const offset_4 = f1.getTensorData(4);
     const size_4 = f1.getTensorDataSize(4);
-    new Int32Array(o.HEAPU8.buffer, offset_0, size_0);
+    new Int32Array(o.HEAPU8.buffer, offset_0, size_0).set(A);
     new Int32Array(o.HEAPU8.buffer, offset_1, size_1).set(STARTS);
     new Int32Array(o.HEAPU8.buffer, offset_2, size_2).set(ENDS);
     new Int32Array(o.HEAPU8.buffer, offset_3, size_3).set(AXES);
@@ -106,9 +106,9 @@ function _test_slice10(o) {
     c_out = new Int32Array(o.HEAPU8.buffer, offset_5, size_5);
     C.set(new Int32Array(o.HEAPU8.buffer, offset_5, size_5));
     console.log(C);
-    console.log("==== Slice1 test complete. ====");
+    console.log("==== Slice10 test complete. ====");
 }
 module.exports = function (o) {
     _test_slice1(o);
-    //_test_slice10(o);
+    _test_slice10(o);
 }

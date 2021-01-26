@@ -1,5 +1,5 @@
 function _test_unsqueeze(o) {
-    console.log("==== Slice test starts. ====");
+    console.log("==== Unsqueeze test starts. ====");
 
     const InferenceContext = o.InferenceContext;
 

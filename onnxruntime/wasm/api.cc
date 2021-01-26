@@ -164,8 +164,7 @@ void InferenceContext::InitKernel(int index,
         if (opset_version < 10) {
             kernels_[index] = new ::onnxruntime::Slice1{info};
         } else {
-            // TODO
-            // kernels_[index] = new ::onnxruntime::Slice10{info};
+            kernels_[index] = new ::onnxruntime::Slice10{info};
         }
     } else if (op == "Tanh") {
         kernel_input_indices_[index] = convertJSArrayToNumberVector<int>(arr_input_indices);
