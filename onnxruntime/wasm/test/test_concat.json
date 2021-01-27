@@ -1,0 +1,78 @@
+[
+    {
+        "name": "Concat test 1",
+        "operator": "Concat",
+        "opset": 7,
+        "attributes": [
+            { "name": "axis", "data": 0, "type": "int" }
+        ],
+        "inputs": [
+            {
+                "data": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+                "dims": [3, 4],
+                "type": 1,
+                "value_idx": 0
+            }, {
+                "data": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+                "dims": [3, 4],
+                "type": 1,
+                "value_idx": 1
+            }
+        ],
+        "initializers": [],
+        "outputs": [
+            {
+                "data":  [
+                    0, 1,  2,  3, 4, 5,  6,  7,
+                    8, 9, 10, 11, 0, 1,  2,  3,
+                    4, 5,  6,  7, 8, 9, 10, 11
+                 ],
+                "dims": [6, 4],
+                "type": 1,
+                "value_idx": 2
+            }
+        ]
+    },
+    {
+        "name": "Concat test with 3 inputs",
+        "operator": "Concat",
+        "opset": 7,
+        "attributes": [
+            { "name": "axis", "data": 0, "type": "int" }
+        ],
+        "inputs": [
+            {
+                "data": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+                "dims": [3, 4],
+                "type": 1,
+                "value_idx": 0
+            },
+            {
+                "data": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+                "dims": [3, 4],
+                "type": 1,
+                "value_idx": 1
+            },
+            {
+                "data": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+                "dims": [3, 4],
+                "type": 1,
+                "value_idx": 2
+            }
+        ],
+        "initializers": [],
+        "outputs": [
+            {
+                "data": [
+                    0,  1,  2, 3,  4,  5, 6,  7,  8,
+                    9, 10, 11, 0,  1,  2, 3,  4,  5,
+                    6,  7,  8, 9, 10, 11, 0,  1,  2,
+                    3,  4,  5, 6,  7,  8, 9, 10, 11
+                ],
+                "dims": [9, 4],
+                "type": 1,
+                "value_idx": 3
+            }
+        ]
+    }
+]

@@ -1,0 +1,138 @@
+[
+    {
+        "name": "Add test without broadcast",
+        "operator": "Add",
+        "opset": 7,
+        "attributes": [],
+        "inputs": [
+            {
+                "data": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+                "dims": [3, 4],
+                "type": 1,
+                "value_idx": 0
+            }
+        ],
+        "initializers": [
+            {
+                "data": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+                "dims": [3, 4],
+                "type": 1,
+                "value_idx": 1
+            }
+        ],
+        "outputs": [
+            {
+                "data":  [
+                    0,  2,  4,  6,  8,
+                   10, 12, 14, 16, 18,
+                   20, 22
+                 ],
+                "dims": [3, 4],
+                "type": 1,
+                "value_idx": 2
+            }
+        ]
+    },
+    {
+        "name": "Add test with broadcast",
+        "operator": "Add",
+        "opset": 7,
+        "attributes": [],
+        "inputs": [
+            {
+                "data": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+                "dims": [3, 4],
+                "type": 1,
+                "value_idx": 0
+            }
+        ],
+        "initializers": [
+            {
+                "data": [0, 1, 2, 3],
+                "dims": [1, 4],
+                "type": 1,
+                "value_idx": 1
+            }
+        ],
+        "outputs": [
+            {
+                "data": [
+                    0,  2,  4, 6,  4,
+                    6,  8, 10, 8, 10,
+                   12, 14
+                ],
+                "dims": [3, 4],
+                "type": 1,
+                "value_idx": 2
+            }
+        ]
+    }, 
+    {
+        "name": "Mul test without broadcast",
+        "operator": "Mul",
+        "opset": 7,
+        "attributes": [],
+        "inputs": [
+            {
+                "data": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+                "dims": [3, 4],
+                "type": 1,
+                "value_idx": 0
+            }
+        ],
+        "initializers": [
+            {
+                "data": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+                "dims": [3, 4],
+                "type": 1,
+                "value_idx": 1
+            }
+        ],
+        "outputs": [
+            {
+                "data":  [
+                    0,   1,  4,  9, 16,
+                    25,  36, 49, 64, 81,
+                   100, 121
+                 ],
+                "dims": [3, 4],
+                "type": 1,
+                "value_idx": 2
+            }
+        ]
+    },
+    {
+        "name": "Mul test with broadcast",
+        "operator": "Mul",
+        "opset": 7,
+        "attributes": [],
+        "inputs": [
+            {
+                "data": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+                "dims": [3, 4],
+                "type": 1,
+                "value_idx": 0
+            }
+        ],
+        "initializers": [
+            {
+                "data": [0, 1, 2, 3],
+                "dims": [1, 4],
+                "type": 1,
+                "value_idx": 1
+            }
+        ],
+        "outputs": [
+            {
+                "data": [
+                    0,  1,  4, 9, 0,
+                    5, 12, 21, 0, 9,
+                   20, 33
+                ],
+                "dims": [3, 4],
+                "type": 1,
+                "value_idx": 2
+            }
+        ]
+    }
+]

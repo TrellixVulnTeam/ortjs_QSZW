@@ -1,0 +1,48 @@
+[
+    {
+        "name": "Sigmoid test",
+        "operator": "Sigmoid",
+        "opset": 11,
+        "attributes": [],
+        "inputs": [
+            {
+                "data": [-1, 0, 1],
+                "dims": [3],
+                "type": 1,
+                "value_idx": 0
+            } 
+        ],
+        "initializers": [],
+        "outputs": [
+            {
+                "data":  [0.2689414322376251, 0.5, 0.7310585975646973],
+                "dims": [3],
+                "type": 1,
+                "value_idx": 1
+            }
+        ]
+    },
+    {
+        "name": "Tanh test",
+        "operator": "Tanh",
+        "opset": 11,
+        "attributes": [],
+        "inputs": [
+            {
+                "data": [-1, 0, 1],
+                "dims": [3],
+                "type": 1,
+                "value_idx": 0
+            } 
+        ],
+        "initializers": [],
+        "outputs": [
+            {
+                "data":  [-0.7615941762924194, 0, 0.7615941762924194],
+                "dims": [3],
+                "type": 1,
+                "value_idx": 1
+            }
+        ]
+    }
+]

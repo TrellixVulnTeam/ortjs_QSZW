@@ -1,83 +1,153 @@
 const wasm_factory = require('../out_wasm_main');
-const binary_tests = require('./test_binary');
-const concat_tests = require('./test_concat');
-const gather_tests = require('./test_gather');
-const matmul_tests = require('./test_matmul');
-const slice_tests = require('./test_slice');
-const unsqueeze_tests = require('./test_unsqueeze');
-const reshape_tests = require('./test_reshape');
-const activation_tests = require('./test_activations');
+const ALL_TESTS = [
+    require('./test_gemm.json'),
+    require('./test_binary.json'),
+    require('./test_concat.json'),
+    require('./test_gather.json'),
+    require('./test_matmul.json'),
+    require('./test_slice.json'),
+    require('./test_unsqueeze.json'),
+    require('./test_reshape.json'),
+    require('./test_activations.json')
+];
 
+var expect = require('chai').expect;
 
-function _test_gemm(o) {
-    console.log("==== GEMM test starts. ====");
+DATA_TYPE_TO_ARRAY_OBJECT_MAP = {
+    // TODO: ADD MORE
+    1: Float32Array,
+    6: Int32Array,
+    7: BigInt64Array
+};
+
+function runOpTestcase(o, testcase) {
     const InferenceContext = o.InferenceContext;
 
-    // val[0]: A - [3, 4]
-    // val[1]: B - [4, 5]
-    // val[2]: C - [3, 5]
+    const num_values = testcase.inputs.length + testcase.initializers.length + testcase.outputs.length;
+    var value_types = new Array(num_values); // value_types[value index] = type
+    var input_idx_to_data = {};
+    var input_indices = [];
+    var init_idx_to_data = {};
+    var output_indices = [];
+    // Create inputs
+    testcase.inputs.forEach(i => {
+        var input;
+        const size = i.dims.reduce((a, b) => a * b);
+        input = new DATA_TYPE_TO_ARRAY_OBJECT_MAP[i.type](size);
+        if (i.type == 7) {
+            input.set(i.data.map(i => BigInt(i)));
+        } else {
+            input.set(i.data);
+        }
+        value_types[i.value_idx] = i.type;
+        input_idx_to_data[i.value_idx] = input;
+        input_indices.push(i.value_idx);
+    });
 
-    const A = new Float32Array(12);
-    A.set([0,1,2,3,4,5,6,7,8,9,10,11]);
-    const B = new Float32Array(20);
-    B.set([0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]);
-    const C = new Float32Array(15);
+    // Create outputs 
+    testcase.outputs.forEach(i => {
+        var output;
+        const size = i.dims.reduce((a, b) => a * b);
+        output = new DATA_TYPE_TO_ARRAY_OBJECT_MAP[i.type](size);
+        value_types[i.value_idx] = i.type;
+        output_indices.push(i.value_idx);
+    });
+
+    testcase.initializers.map(i => {
+        value_types[i.value_idx] = i.type;
+    });
 
     const f1 = new InferenceContext(1,  // num operators
-                                    3,  // num values
-                                    [1, 1, 1], // value types
-                                    );
+        num_values,  // num values
+        value_types, // value types
+    );
 
-    f1.setInitializer(1,             // value index
-                      [4, 5]);       // dim
-    
-    f1.addAttribute_i(0, "transA", 0);
-    f1.addAttribute_i(0, "transB", 0);
-    f1.addAttribute_f(0, "alpha", 1.0);
-    f1.addAttribute_f(0, "beta", 0.0);
+    // Create initializer 
+    testcase.initializers.forEach(i => {
+        f1.setInitializer(i.value_idx,             // value index
+            i.dims);       // dim
+        var initializer;
+        const size = i.dims.reduce((a, b) => a * b);
+        initializer = new DATA_TYPE_TO_ARRAY_OBJECT_MAP[i.type](size);
+        if (i.type == 7) {
+            initializer.set(i.data.map(i => BigInt(i)));
+        } else {
+            initializer.set(i.data);
+        }
+        input_indices.push(i.value_idx);
+        init_idx_to_data[i.value_idx] = initializer;
+    });
+    // set attributes
+    testcase.attributes.forEach(i => {
+        if (i.type == "float") {
+            f1.addAttribute_f(0, i.name, i.data);
+        } else if (i.type == "int") {
+            f1.addAttribute_i(0, i.name, i.data);
+        } else if (i.type == "ints") {
+            f1.addAttribute_ints(0, i.name, i.data);
+        } else if (i.type == "floats") {
+            f1.addAttribute_floats(0, i.name, i.data);
+        } else if (i.type == "string") {
+            f1.addAttribute_s(0, i.name, i.data);
+        }
+    });
 
-    f1.initKernel(0, "Gemm", "", 7,  // op, opset, opset_ver
-                  [0, 1], [2],    // inputs idx, output idx
-                  "");
+    f1.initKernel(0, testcase.operator, "", testcase.opset,  // op, opset, opset_ver
+        input_indices, output_indices,    // inputs idx, output idx
+        "");
 
-    // init set one time. 
-    const offset_1 = f1.getTensorData(1);
-    const size_1 = f1.getTensorDataSize(1);
-    new Float32Array(o.HEAPU8.buffer, offset_1, size_1).set(B);
+    // Set initializer
+    testcase.initializers.forEach(i => {
+        const offset = f1.getTensorData(i.value_idx);
+        const size = f1.getTensorDataSize(i.value_idx);
+        new DATA_TYPE_TO_ARRAY_OBJECT_MAP[i.type](o.HEAPU8.buffer, offset, size).set(init_idx_to_data[i.value_idx]);
+    })
 
-    f1.setInput(0,        // value idx
-                [3, 4]);  // shape
-
-    // can set multiple. 
-    const offset_0 = f1.getTensorData(0);
-    const size_0 = f1.getTensorDataSize(0);
-    new Float32Array(o.HEAPU8.buffer, offset_0, size_0).set(A);
-    
+    // Set input
+    testcase.inputs.forEach(i => {
+        f1.setInput(i.value_idx, i.dims);
+        const offset = f1.getTensorData(i.value_idx);
+        const size = f1.getTensorDataSize(i.value_idx);
+        new DATA_TYPE_TO_ARRAY_OBJECT_MAP[i.type](o.HEAPU8.buffer, offset, size).set(input_idx_to_data[i.value_idx]);
+    })
 
     f1.run();
 
-    const offset_2 = f1.getTensorData(2);
-    const size_2 = f1.getTensorDataSize(2);
-    const c_out = new Float32Array(o.HEAPU8.buffer, offset_2, size_2);
-    C.set(new Float32Array(o.HEAPU8.buffer, offset_2, size_2));
-    console.log(C);
-    console.log("==== GEMM test complete. ====");
+    var results = [];
+    testcase.outputs.forEach(i => {
+        const offset = f1.getTensorData(i.value_idx);
+        const size = f1.getTensorDataSize(i.value_idx);
+        const c_out = new DATA_TYPE_TO_ARRAY_OBJECT_MAP[i.type](o.HEAPU8.buffer, offset, size);
+        results.push(c_out);
+    })
 
+    testcase.outputs.forEach((expectedOutput, i) => {
+        // check output size and shape
+        expect(results[i].length, 'size of output tensors').to.equal(expectedOutput.data.length);
+        expect(f1.getTensorShape(expectedOutput.value_idx), 'dims of output tensors').to.eql(expectedOutput.dims);
+        for (var idx = 0; idx < results[i].length; idx++) {
+            // check output value
+            expect(results[i][idx]).equals(expectedOutput.data[idx]);            
+        }
+    });
 }
 
+describe('#OPTESTS#', function () {
+    var ob;
+    // const buffer;
+    before(() => {
+        return wasm_factory().then((o) => {
+            ob = o;
+        });
+    });
 
-wasm_factory().then((o) => {
-
-    _test_gemm(o);
-    binary_tests(o, "Add");
-    binary_tests(o, "Mul");
-    concat_tests(o);
-    gather_tests(o);
-    matmul_tests(o);
-    slice_tests(o);
-    unsqueeze_tests(o);
-    reshape_tests(o);
-    activation_tests(o);
+    for (const test of ALL_TESTS) {
+        for (const testCase of test) {
+            describe(`#OPTESTS# - ${testCase.operator}`, function () {
+                it(testCase.name, function () {
+                    runOpTestcase(ob, testCase);
+                });
+            });
+        }
+    }
 });
-
-//wasm_factory();

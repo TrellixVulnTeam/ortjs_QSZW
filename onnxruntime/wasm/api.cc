@@ -96,89 +96,40 @@ void InferenceContext::InitKernel(int index,
     // TODO
     // kernels_.emplace_back(...);
     // attributes_.emplace_back(...);
-    
+    kernel_input_indices_[index] = convertJSArrayToNumberVector<int>(arr_input_indices);
+    kernel_output_indices_[index] = convertJSArrayToNumberVector<int>(arr_output_indices);
+    if (op == "Concat") {
+        kernel_input_arg_count_[index].push_back(kernel_input_indices_[index].size());
+    }
+    ::onnxruntime::OpKernelInfo info(alloc_, attributes_[index], kernel_input_arg_count_[index],
+                                        static_cast<int>(kernel_input_indices_[index].size()),
+                                        static_cast<int>(kernel_output_indices_[index].size()));
     // naive resolve implementation
     if (op == "Gemm") {
-        kernel_input_indices_[index] = convertJSArrayToNumberVector<int>(arr_input_indices);
-        kernel_output_indices_[index] = convertJSArrayToNumberVector<int>(arr_output_indices);
-        ::onnxruntime::OpKernelInfo info(alloc_, attributes_[index], kernel_input_arg_count_[index],
-                                         static_cast<int>(kernel_input_indices_[index].size()),
-                                         static_cast<int>(kernel_output_indices_[index].size()));
         kernels_[index] = new ::onnxruntime::Gemm<float>{info};
     } else if (op == "Add") {
-        kernel_input_indices_[index] = convertJSArrayToNumberVector<int>(arr_input_indices);
-        kernel_output_indices_[index] = convertJSArrayToNumberVector<int>(arr_output_indices);
-        ::onnxruntime::OpKernelInfo info(alloc_, attributes_[index], kernel_input_arg_count_[index],
-                                         static_cast<int>(kernel_input_indices_[index].size()),
-                                         static_cast<int>(kernel_output_indices_[index].size()));
         kernels_[index] = new ::onnxruntime::Add<float>{info};
     } else if (op == "Concat") {
-        kernel_input_indices_[index] = convertJSArrayToNumberVector<int>(arr_input_indices);
-        kernel_output_indices_[index] = convertJSArrayToNumberVector<int>(arr_output_indices);
-        kernel_input_arg_count_[index].push_back(kernel_input_indices_[index].size());
-        ::onnxruntime::OpKernelInfo info(alloc_, attributes_[index], kernel_input_arg_count_[index],
-                                         static_cast<int>(kernel_input_indices_[index].size()),
-                                         static_cast<int>(kernel_output_indices_[index].size()));
         kernels_[index] = new ::onnxruntime::Concat{info};
     } else if (op == "Gather") {
-        kernel_input_indices_[index] = convertJSArrayToNumberVector<int>(arr_input_indices);
-        kernel_output_indices_[index] = convertJSArrayToNumberVector<int>(arr_output_indices);
-        ::onnxruntime::OpKernelInfo info(alloc_, attributes_[index], kernel_input_arg_count_[index],
-                                         static_cast<int>(kernel_input_indices_[index].size()),
-                                         static_cast<int>(kernel_output_indices_[index].size()));
         kernels_[index] = new ::onnxruntime::Gather{info};
     } else if (op == "MatMul") {
-        kernel_input_indices_[index] = convertJSArrayToNumberVector<int>(arr_input_indices);
-        kernel_output_indices_[index] = convertJSArrayToNumberVector<int>(arr_output_indices);
-        ::onnxruntime::OpKernelInfo info(alloc_, attributes_[index], kernel_input_arg_count_[index],
-                                         static_cast<int>(kernel_input_indices_[index].size()),
-                                         static_cast<int>(kernel_output_indices_[index].size()));
         kernels_[index] = new ::onnxruntime::MatMul<float>{info};
     } else if (op == "Mul") {
-        kernel_input_indices_[index] = convertJSArrayToNumberVector<int>(arr_input_indices);
-        kernel_output_indices_[index] = convertJSArrayToNumberVector<int>(arr_output_indices);
-        ::onnxruntime::OpKernelInfo info(alloc_, attributes_[index], kernel_input_arg_count_[index],
-                                         static_cast<int>(kernel_input_indices_[index].size()),
-                                         static_cast<int>(kernel_output_indices_[index].size()));
         kernels_[index] = new ::onnxruntime::Mul<float>{info};
     }  else if (op == "Reshape") {
-        kernel_input_indices_[index] = convertJSArrayToNumberVector<int>(arr_input_indices);
-        kernel_output_indices_[index] = convertJSArrayToNumberVector<int>(arr_output_indices);
-        ::onnxruntime::OpKernelInfo info(alloc_, attributes_[index], kernel_input_arg_count_[index],
-                                         static_cast<int>(kernel_input_indices_[index].size()),
-                                         static_cast<int>(kernel_output_indices_[index].size()));
         kernels_[index] = new ::onnxruntime::Reshape{info};
     } else if (op == "Sigmoid") {
-        kernel_input_indices_[index] = convertJSArrayToNumberVector<int>(arr_input_indices);
-        kernel_output_indices_[index] = convertJSArrayToNumberVector<int>(arr_output_indices);
-        ::onnxruntime::OpKernelInfo info(alloc_, attributes_[index], kernel_input_arg_count_[index],
-                                         static_cast<int>(kernel_input_indices_[index].size()),
-                                         static_cast<int>(kernel_output_indices_[index].size()));
         kernels_[index] = new ::onnxruntime::ElementWiseKernel<::onnxruntime::functors::Sigmoid<float>>{info};
     } else if (op == "Slice") {
-        kernel_input_indices_[index] = convertJSArrayToNumberVector<int>(arr_input_indices);
-        kernel_output_indices_[index] = convertJSArrayToNumberVector<int>(arr_output_indices);
-        ::onnxruntime::OpKernelInfo info(alloc_, attributes_[index], kernel_input_arg_count_[index],
-                                         static_cast<int>(kernel_input_indices_[index].size()),
-                                         static_cast<int>(kernel_output_indices_[index].size()));
         if (opset_version < 10) {
             kernels_[index] = new ::onnxruntime::Slice1{info};
         } else {
             kernels_[index] = new ::onnxruntime::Slice10{info};
         }
     } else if (op == "Tanh") {
-        kernel_input_indices_[index] = convertJSArrayToNumberVector<int>(arr_input_indices);
-        kernel_output_indices_[index] = convertJSArrayToNumberVector<int>(arr_output_indices);
-        ::onnxruntime::OpKernelInfo info(alloc_, attributes_[index], kernel_input_arg_count_[index],
-                                         static_cast<int>(kernel_input_indices_[index].size()),
-                                         static_cast<int>(kernel_output_indices_[index].size()));
         kernels_[index] = new ::onnxruntime::ElementWiseKernel<::onnxruntime::functors::Tanh<float>>{info};
     } else if (op == "Unsqueeze") {
-        kernel_input_indices_[index] = convertJSArrayToNumberVector<int>(arr_input_indices);
-        kernel_output_indices_[index] = convertJSArrayToNumberVector<int>(arr_output_indices);
-        ::onnxruntime::OpKernelInfo info(alloc_, attributes_[index], kernel_input_arg_count_[index],
-                                         static_cast<int>(kernel_input_indices_[index].size()),
-                                         static_cast<int>(kernel_output_indices_[index].size()));
         kernels_[index] = new ::onnxruntime::Unsqueeze{info};
     } else {
         //error

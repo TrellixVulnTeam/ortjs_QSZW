@@ -1,0 +1,72 @@
+[
+    {
+        "name": "Gather test 1d",
+        "operator": "Gather",
+        "opset": 7,
+        "attributes": [
+            { "name": "axis", "data": 0, "type": "int" }
+        ],
+        "inputs": [
+            {
+                "data": [4, 3, 5, 7, 6, 8],
+                "dims": [6],
+                "type": 6,
+                "value_idx": 0
+            }, {
+                "data": [0, 1, 4],
+                "dims": [3],
+                "type": 6,
+                "value_idx": 1
+            }
+        ],
+        "initializers": [],
+        "outputs": [
+            {
+                "data": [4, 3, 6],
+                "dims": [3],
+                "type": 6,
+                "value_idx": 2
+            }
+        ]
+    },
+    {
+        "name": "Gather test 2D axis 0",
+        "operator": "Gather",
+        "opset": 7,
+        "attributes": [
+            { "name": "axis", "data": 0, "type": "int" }
+        ],
+        "inputs": [
+            {
+                "data": [1.0, 1.2, 2.3, 3.4, 4.5, 5.7],
+                "dims": [3, 2],
+                "type": 1,
+                "value_idx": 0
+            },
+            {
+                "data": [0, 1, 1, 2],
+                "dims": [2, 2],
+                "type": 6,
+                "value_idx": 1
+            }
+        ],
+        "initializers": [],
+        "outputs": [
+            {
+                "data": [
+                    1,
+                    1.2000000476837158,
+                    2.299999952316284,
+                    3.4000000953674316,
+                    2.299999952316284,
+                    3.4000000953674316,
+                    4.5,
+                    5.699999809265137
+                ],
+                "dims": [2, 2, 2],
+                "type": 1,
+                "value_idx": 2
+            }
+        ]
+    }
+]

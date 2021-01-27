@@ -1,0 +1,78 @@
+[
+    {
+        "name": "Slice test Opset < 10",
+        "operator": "Slice",
+        "opset": 9,
+        "attributes": [
+            { "name": "starts", "data": [0, 0], "type": "ints" },
+            { "name": "ends", "data": [2, 2], "type": "ints" },
+            { "name": "axes", "data": [0, 1], "type": "ints" },
+            { "name": "steps", "data": [1, 1], "type": "ints" }
+        ],
+        "inputs": [
+            {
+                "data": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+                "dims": [3, 4],
+                "type": 6,
+                "value_idx": 0
+            } 
+        ],
+        "initializers": [],
+        "outputs": [
+            {
+                "data":  [0, 1, 4, 5],
+                "dims": [2, 2],
+                "type": 6,
+                "value_idx": 1
+            }
+        ]
+    }, 
+    {
+    "name": "Slice test Opset > 10",
+        "operator": "Slice",
+        "opset": 11,
+        "attributes": [],
+        "inputs": [
+            {
+                "data": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+                "dims": [3, 4],
+                "type": 6,
+                "value_idx": 0
+            },
+            {
+                "data": [0, 0],
+                "dims": [2],
+                "type": 6,
+                "value_idx": 1
+            },
+            {
+                "data": [2, 2],
+                "dims": [2],
+                "type": 6,
+                "value_idx": 2
+            },
+            {
+                "data": [0, 1],
+                "dims": [2],
+                "type": 6,
+                "value_idx": 3
+            },
+            {
+                "data": [1, 1],
+                "dims": [2],
+                "type": 6,
+                "value_idx": 4
+            }
+        ],
+        "initializers": [],
+        "outputs": [
+            {
+                "data":  [0, 1, 4, 5],
+                "dims": [2, 2],
+                "type": 6,
+                "value_idx": 5
+            }
+        ]
+    }
+
+]
