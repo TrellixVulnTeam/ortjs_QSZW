@@ -1,6 +1,6 @@
 {
     "scripts": {
-        "test": "mocha"
+        "test": "mocha --reporter=nyan"
     },
     "devDependencies": {
         "mocha": "^8.2.1"

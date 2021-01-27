@@ -30,8 +30,11 @@ Currently, only MLAS can be built to WASM. More parts in ORT will be built into 
 
 ### Test
 
-- Use Node.js to launch.
-   - call `test.cmd`
+- Run `npm test` after running the install/ci command
+```
+npm ci
+npm test
+```
 
 ### Output
 
