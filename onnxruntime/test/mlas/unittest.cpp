@@ -205,7 +205,11 @@ public:
 
     virtual
     void
-    Benchmark_Prepare(size_t, size_t, size_t, float **, float **, float **, float **) {};
+    Benchmark_Prepare(size_t, size_t, size_t, float **, float **, float **, float **)
+    {
+    };
+
+    const unsigned int BENCH_ITERATONS = 100;
 };
 
 template<typename T, bool Packed>
@@ -248,10 +252,9 @@ public:
         const T alpha = (T)(1.0);
         const T beta = (T)(0.0);
 
-
         for (unsigned v = 0; v < 4; v++) {
             uint64_t zstart = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
-            for (unsigned k = 0; k < 2000; k++) {
+            for (unsigned k = 0; k < BENCH_ITERATONS; k++) {
                 MlasGemm(transA, transB, M, N, K, alpha, A, lda, B, ldb, beta, C, N, threadpool);
             }
             uint64_t zend = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
@@ -289,6 +292,7 @@ public:
         MlasGemmPackB(TransB, N, K, B, ldb, PackedB);
         MlasGemm(TransA, M, N, K, T(alpha), A, lda, PackedB, T(beta), C, ldc, threadpool);
     }
+
     void
     Benchmark(CBLAS_TRANSPOSE transA, CBLAS_TRANSPOSE transB)
     {
@@ -306,7 +310,7 @@ public:
 
         for (unsigned v = 0; v < 4; v++) {
             uint64_t zstart = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
-            for (unsigned k = 0; k < 2000; k++) {
+            for (unsigned k = 0; k < BENCH_ITERATONS; k++) {
                 MlasGemm(transA, M, N, K, alpha, A, lda, BP, beta, C, N, threadpool);
             }
             uint64_t zend = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
@@ -3200,13 +3204,13 @@ RunThreadedTests(
     printf("SGEMM packed benchmark.\n");
     onnxruntime::make_unique<MlasFgemmTest<float, true>>()->Benchmark(CblasNoTrans, CblasNoTrans);
 
-    // printf("Conv2D tests.\n");
-    // onnxruntime::make_unique<MlasConv2DTest>()->ExecuteShort();
-    // if (MlasNchwcGetBlockSize() > 1) {
-    //     onnxruntime::make_unique<MlasNchwcConv2DTest>()->ExecuteShort();
-    // }
-
-
+    printf("Conv2D tests.\n");
+    onnxruntime::make_unique<MlasConv2DTest>()->ExecuteShort();
+#if !defined(__wasm__)
+    if (MlasNchwcGetBlockSize() > 1) {
+        onnxruntime::make_unique<MlasNchwcConv2DTest>()->ExecuteShort();
+    }
+#endif
 }
 
 int

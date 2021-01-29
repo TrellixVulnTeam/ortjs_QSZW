@@ -46,6 +46,10 @@ const SOURCE_FILES = [
     `${ORT_FOLDER}/onnxruntime/core/mlas/lib/sgemm.cpp`,
     `${ORT_FOLDER}/onnxruntime/core/mlas/lib/logistic.cpp`,
     `${ORT_FOLDER}/onnxruntime/core/mlas/lib/tanh.cpp`,
+    `${ORT_FOLDER}/onnxruntime/core/mlas/lib/snchwc.cpp`,
+    `${ORT_FOLDER}/onnxruntime/core/mlas/lib/activate.cpp`,
+    `${ORT_FOLDER}/onnxruntime/core/mlas/lib/reorder.cpp`,    
+    `${ORT_FOLDER}/onnxruntime/core/mlas/lib/convolve.cpp`,
 
     // onnx
     //`${ORT_FOLDER}/build/Windows/${BUILD_TYPE}/onnx/onnx-ml.pb.cc`,
@@ -93,6 +97,7 @@ const SOURCE_FILES = [
     `${ORT_FOLDER}/onnxruntime/core/providers/cpu/tensor/unsqueeze.cc`,
     `${ORT_FOLDER}/onnxruntime/core/providers/cpu/activation/activations.cc`,
     `${ORT_FOLDER}/onnxruntime/core/providers/cpu/tensor/reshape.cc`,
+    `${ORT_FOLDER}/onnxruntime/core/providers/cpu/nn/conv.cc`,
 
     // utils
     `${ORT_FOLDER}/onnxruntime/wasm/api.cc`,
