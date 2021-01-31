@@ -1,2 +1,3 @@
 out_wasm_main.*
+out_mlas.*
 /node_modules/
