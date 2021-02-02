@@ -33,6 +33,8 @@ const INC_SEARCH_FOLDERS = [
     //`${ORT_FOLDER}/cmake/external/nsync`,
 
     `${ORT_FOLDER}/cmake/external/onnx`,
+    `${ORT_FOLDER}/cmake/external/optional-lite/include`,
+    `${ORT_FOLDER}/cmake/external/mp11/include`,
     `${ORT_FOLDER}/cmake/external/protobuf/src`,
     `${ORT_FOLDER}/cmake/external/SafeInt`,
 

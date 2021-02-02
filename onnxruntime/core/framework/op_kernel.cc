@@ -168,11 +168,11 @@ const std::string& OpKernelContext::GetNodeName() const {
 const std::string& OpKernelContext::GetOpDomain() const {
   return kernel_->KernelDef().Domain();
 }
-#endif
 
 const std::string& OpKernelContext::GetOpType() const {
   return kernel_->Node().OpType();
 }
+#endif
 
 const OrtValue* OpKernelContext::GetInputMLValue(int index) const {
   if (index < 0 || index >= InputCount())

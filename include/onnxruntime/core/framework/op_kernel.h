@@ -257,12 +257,12 @@ class OpKernelContext {
   Returns the opset domain of the underlying kernel
   **/
   const std::string& GetOpDomain() const;
-#endif
 
   /**
   Returns the optype of the underlying kernel
   **/
   const std::string& GetOpType() const;
+#endif
 
   /**
   Returns the node name of the underlying kernel

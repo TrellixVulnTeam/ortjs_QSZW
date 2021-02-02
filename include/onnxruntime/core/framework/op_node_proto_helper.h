@@ -4,6 +4,7 @@
 #pragma once
 
 #include "core/common/status.h"
+#include "onnx/defs/schema.h"
 #include "core/graph/graph_viewer.h"
 #include "gsl/gsl"
 
