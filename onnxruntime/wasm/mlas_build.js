@@ -79,8 +79,9 @@ if (BUILD_TYPE === 'Debug') {
 -DNDEBUG
 -s VERBOSE=0
 -s ASSERTIONS=0
--O3                                                          
--gseparate-dwarf=out_mlas.debug.wasm
+-g4
+-O3
+-gseparate-dwarf
 `
 }
 

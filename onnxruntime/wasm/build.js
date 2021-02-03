@@ -100,6 +100,7 @@ const SOURCE_FILES = [
     `${ORT_FOLDER}/onnxruntime/core/providers/cpu/activation/activations.cc`,
     `${ORT_FOLDER}/onnxruntime/core/providers/cpu/tensor/reshape.cc`,
     `${ORT_FOLDER}/onnxruntime/core/providers/cpu/nn/conv.cc`,
+    `${ORT_FOLDER}/onnxruntime/contrib_ops/cpu/fused_conv.cc`,
 
     // utils
     `${ORT_FOLDER}/onnxruntime/wasm/api.cc`,
