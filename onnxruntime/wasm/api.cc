@@ -18,6 +18,8 @@
 #include "core/providers/cpu/nn/conv.h"
 #include "core/mlas/inc/mlas.h"
 
+#include <thread>
+
 using namespace emscripten;
 
 EMSCRIPTEN_BINDINGS(inference_context) {
@@ -66,6 +68,7 @@ InferenceContext::InferenceContext(int num_kernels,
         types_[i] = onnxruntime::DataTypeImpl::TensorTypeFromONNXEnum(types[i])->GetElementType();
     }
 
+    kernel_names_.resize(num_kernels);
     attributes_.resize(num_kernels);
     kernels_.resize(num_kernels);
     kernel_input_indices_.resize(num_kernels);
@@ -98,6 +101,7 @@ void InferenceContext::InitKernel(int index,
     // TODO
     // kernels_.emplace_back(...);
     // attributes_.emplace_back(...);
+    kernel_names_[index] = op;
     kernel_input_indices_[index] = convertJSArrayToNumberVector<int>(arr_input_indices);
     kernel_output_indices_[index] = convertJSArrayToNumberVector<int>(arr_output_indices);
     if (op == "Concat") {
@@ -183,6 +187,8 @@ void InferenceContext::SetInput(int index, const emscripten::val& arr_dims) {
 }
 
 void InferenceContext::Run() {
+    std::vector<std::pair<uint64_t, uint64_t>> op_time_stamps;
+    op_time_stamps.reserve(kernels_.size());
     for (size_t i = 0; i < kernels_.size(); i++) {
         onnxruntime::OpKernelContext ctx{values_.data(),
                                          types_.data(),
@@ -197,14 +203,35 @@ void InferenceContext::Run() {
             std::cout<<"input"<<j<<" ["<<kernel_input_indices_[i][j]<<"/"<<values_.size()<<"]: "<<t->Shape().ToString()<<" "<<t->DataRaw()<<std::endl;
         }
 #endif
+        uint64_t op_start = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
         ORT_ENFORCE(kernels_[i]->Compute(&ctx).IsOK(),
                     "failed to run kernel");
+        uint64_t op_end = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+        op_time_stamps.emplace_back(op_start, op_end);
+
 #ifndef NDEBUG
         for (size_t j = 0; j < kernel_output_indices_[i].size(); j++) {
             auto &t = values_[kernel_output_indices_[i][j]].Get<onnxruntime::Tensor>();
             std::cout<<"output"<<j<<" ["<<kernel_output_indices_[i][j]<<"/"<<values_.size()<<"]: "<<t.Shape().ToString()<<" "<<t.DataRaw()<<std::endl;
         }
 #endif
+    }
+
+    if (op_time_stamps.size()) {
+        std::stringstream ss;
+        ss << "Start Run() from [thread:" << std::this_thread::get_id() << "] at " <<  op_time_stamps.front().first << std::endl;
+        for (size_t i = 0; i < kernels_.size(); i++) {
+            const auto& op_time_stamp = op_time_stamps[i];
+            ss << "    Kernel " << i << ", op_name:" << kernel_names_[i];
+            ss << ", Start:" << op_time_stamp.first << ", End:" << op_time_stamp.second;
+            ss << ", latency:" << (op_time_stamp.second - op_time_stamp.first) << " us";
+            ss << std::endl;
+            std::cout << ss.str();
+            ss.str(std::string());
+        }
+        ss << "End Run() from [thread:" << std::this_thread::get_id() << "] at " <<  op_time_stamps.back().second;
+        ss << " total Run() latency:" << (op_time_stamps.back().second - op_time_stamps.front().first) << " us" << std::endl;
+        std::cout << ss.str();
     }
 }
 

@@ -38,6 +38,7 @@ private:
     std::vector<OrtValue> values_;
     std::vector<onnxruntime::MLDataType> types_;
     std::vector<bool> preserve_;
+    std::vector<std::string> kernel_names_;
 
     onnxruntime::AllocatorPtr alloc_;
     std::vector<onnxruntime::OpKernel*> kernels_;
