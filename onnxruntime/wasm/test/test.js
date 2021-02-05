@@ -8,7 +8,10 @@ const ALL_TESTS = [
     require('./test_slice.json'),
     require('./test_unsqueeze.json'),
     require('./test_reshape.json'),
-    require('./test_activations.json')
+    require('./test_activations.json'), 
+    require('./test_relu.json'), 
+    require('./test_conv.json'), 
+    require('./test_resize.json')
 ];
 
 var expect = require('chai').expect;
@@ -32,7 +35,7 @@ function runOpTestcase(o, testcase) {
     // Create inputs
     testcase.inputs.forEach(i => {
         var input;
-        const size = i.dims.reduce((a, b) => a * b);
+        const size = i.dims.length == 0? 1: i.dims.reduce((a, b) => a * b);
         input = new DATA_TYPE_TO_ARRAY_OBJECT_MAP[i.type](size);
         if (i.type == 7) {
             input.set(i.data.map(i => BigInt(i)));
@@ -47,7 +50,7 @@ function runOpTestcase(o, testcase) {
     // Create outputs 
     testcase.outputs.forEach(i => {
         var output;
-        const size = i.dims.reduce((a, b) => a * b);
+        const size = i.dims.length == 0? 1: i.dims.reduce((a, b) => a * b);
         output = new DATA_TYPE_TO_ARRAY_OBJECT_MAP[i.type](size);
         value_types[i.value_idx] = i.type;
         output_indices.push(i.value_idx);
@@ -67,7 +70,7 @@ function runOpTestcase(o, testcase) {
         f1.setInitializer(i.value_idx,             // value index
             i.dims);       // dim
         var initializer;
-        const size = i.dims.reduce((a, b) => a * b);
+        const size = i.dims.length == 0? 1: i.dims.reduce((a, b) => a * b);
         initializer = new DATA_TYPE_TO_ARRAY_OBJECT_MAP[i.type](size);
         if (i.type == 7) {
             initializer.set(i.data.map(i => BigInt(i)));
@@ -127,7 +130,8 @@ function runOpTestcase(o, testcase) {
         expect(f1.getTensorShape(expectedOutput.value_idx), 'dims of output tensors').to.eql(expectedOutput.dims);
         for (var idx = 0; idx < results[i].length; idx++) {
             // check output value
-            expect(results[i][idx]).equals(expectedOutput.data[idx]);            
+            const diff = Math.abs(results[i][idx] - expectedOutput.data[idx]);
+            expect(diff < 1e5);            
         }
     });
 }

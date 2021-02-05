@@ -1005,8 +1005,16 @@ Status Upsample<T>::Compute(OpKernelContext* context) const {
       }
     }
   }
-
+#if !defined(__wasm__)
   if (OpKernel::Node().InputDefs().size() == 1) {
+#else
+  // InputDefs().size() workaround
+  int sum_of_elems = 0;
+  for(auto it = OpKernel::Node().InputArgCount().begin(); it != OpKernel::Node().InputArgCount().end(); ++it) {
+      sum_of_elems += *it;
+  }
+  if (sum_of_elems == 1) {
+#endif
     // Compute output shape from scales and input dims
     ComputeOutputShape(scales_, X->Shape().GetDims(), output_dims);
     return BaseCompute(context, *roi_ptr, scales_, output_dims);

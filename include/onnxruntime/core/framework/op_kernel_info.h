@@ -30,11 +30,18 @@ public:
   const NodeAttributes& GetAttributes() const noexcept { return attributes_; }
   /** Gets the count of arguments for each of the Node's explicit inputs. */
   const std::vector<int>& InputArgCount() const noexcept { return input_arg_count_; }
+  /** Gets the opset version that the Node's operator was first defined in.
+  @returns Opset version. If -1 the Node's operator has not been set.
+  */
+  int SinceVersion() const noexcept { return since_version_; }
 
 private:
   const NodeAttributes& attributes_;
   // input/output defs and arg count
   std::vector<int> input_arg_count_;
+  // TODO: MODIFICATION NEEDED HERE
+  // set from op_->SinceVersion() or via deserialization when OpSchema is not available
+  int since_version_ = 11;
 };
 #endif
 
@@ -69,6 +76,8 @@ class OpKernelInfo : public OpNodeProtoHelper<ProtoHelperNodeContext> {
 
   AllocatorPtr GetAllocator(int device_id, OrtMemType mem_type) const;
 
+  bool TryGetConstantInput(int input_index, const Tensor** constant_input_value) const;
+
 #if !defined(__wasm__)
   const OrtMemoryInfo& GetMemoryInfo(int device_id, OrtMemType mem_type) const;
 
@@ -80,7 +89,6 @@ class OpKernelInfo : public OpNodeProtoHelper<ProtoHelperNodeContext> {
 
   const onnxruntime::Node& node() const noexcept;
 
-  bool TryGetConstantInput(int input_index, const Tensor** constant_input_value) const;
 
   common::Status GetFusedFuncs(NodeComputeInfo*& compute_info) const;
 #else

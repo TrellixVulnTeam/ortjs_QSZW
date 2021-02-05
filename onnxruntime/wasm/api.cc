@@ -14,6 +14,8 @@
 #include "core/providers/cpu/tensor/reshape.h"
 #include "core/providers/cpu/element_wise_ranged_transform.h"
 #include "core/providers/cpu/activation/activations.h"
+#include "core/providers/cpu/tensor/resize.h"
+#include "core/providers/cpu/nn/conv.h"
 #include "core/mlas/inc/mlas.h"
 
 using namespace emscripten;
@@ -111,14 +113,20 @@ void InferenceContext::InitKernel(int index,
         kernels_[index] = new ::onnxruntime::Add<float>{info};
     } else if (op == "Concat") {
         kernels_[index] = new ::onnxruntime::Concat{info};
+    } else if (op == "Conv") {
+        kernels_[index] = new ::onnxruntime::Conv<float>{info};
     } else if (op == "Gather") {
         kernels_[index] = new ::onnxruntime::Gather{info};
     } else if (op == "MatMul") {
         kernels_[index] = new ::onnxruntime::MatMul<float>{info};
     } else if (op == "Mul") {
         kernels_[index] = new ::onnxruntime::Mul<float>{info};
-    }  else if (op == "Reshape") {
+    } else if (op == "Relu") {
+        kernels_[index] = new ::onnxruntime::ElementWiseKernel<::onnxruntime::functors::Relu<float>>{info};
+    } else if (op == "Reshape") {
         kernels_[index] = new ::onnxruntime::Reshape{info};
+    } else if (op == "Resize") {
+        kernels_[index] = new ::onnxruntime::Resize<float>{info};
     } else if (op == "Sigmoid") {
         kernels_[index] = new ::onnxruntime::ElementWiseKernel<::onnxruntime::functors::Sigmoid<float>>{info};
     } else if (op == "Slice") {

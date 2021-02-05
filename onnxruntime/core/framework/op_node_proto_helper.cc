@@ -44,7 +44,7 @@ inline bool HasTyped<int64_t>(const AttributeProto* attr) {
 }
 template <>
 inline bool HasTyped<std::string>(const AttributeProto* attr) {
-  return attr->type() == ONNX_NAMESPACE::AttributeProto::AttributeType::AttributeProto_AttributeType_STRINGS;
+  return attr->type() == ONNX_NAMESPACE::AttributeProto::AttributeType::AttributeProto_AttributeType_STRING;
 }
 
 // template <>

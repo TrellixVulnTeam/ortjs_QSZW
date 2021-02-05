@@ -42,6 +42,17 @@ Tensor* OpKernelContext::Output(int index, const std::initializer_list<int64_t>&
   return Output(index, TensorShape(shape));
 }
 
+Status OpKernelContext::GetTempSpaceAllocator(AllocatorPtr* output) const {
+#if !defined(__wasm__)
+  *output = execution_frame_->GetAllocator(kernel_->Allocator(0, OrtMemTypeDefault));
+#else
+  *output = kernel_->Info().GetAllocator(0, OrtMemTypeDefault);
+#endif
+  if (!*output)
+    return Status(common::ONNXRUNTIME, common::FAIL, "TempSpace allocator not found");
+  return Status::OK();
+}
+
 #if !defined(__wasm__)
 SparseTensor* OpKernelContext::Output(int index, size_t nnz, const TensorShape& shape) {
   auto p_ml_value = OutputMLValue(index, shape, nnz);
@@ -79,12 +90,6 @@ int OpKernelContext::NumVariadicInputs(size_t arg_num) const {
   return arg_counts[arg_num];
 }
 
-Status OpKernelContext::GetTempSpaceAllocator(AllocatorPtr* output) const {
-  *output = execution_frame_->GetAllocator(kernel_->Allocator(0, OrtMemTypeDefault));
-  if (!*output)
-    return Status(common::ONNXRUNTIME, common::FAIL, "TempSpace allocator not found");
-  return Status::OK();
-}
 
 MLDataType OpKernelContext::InputType(int index) const {
   int input_arg_index = GetInputArgIndex(index);
