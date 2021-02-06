@@ -16,6 +16,7 @@
 #include "core/providers/cpu/activation/activations.h"
 #include "core/providers/cpu/tensor/resize.h"
 #include "core/providers/cpu/nn/conv.h"
+#include "contrib_ops/cpu/fused_conv.h"
 #include "core/mlas/inc/mlas.h"
 
 #include <thread>
@@ -119,6 +120,8 @@ void InferenceContext::InitKernel(int index,
         kernels_[index] = new ::onnxruntime::Concat{info};
     } else if (op == "Conv") {
         kernels_[index] = new ::onnxruntime::Conv<float>{info};
+    } else if (op == "FusedConv") {
+        kernels_[index] = new ::onnxruntime::contrib::FusedConvFloat{info};
     } else if (op == "Gather") {
         kernels_[index] = new ::onnxruntime::Gather{info};
     } else if (op == "MatMul") {

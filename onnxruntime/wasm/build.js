@@ -101,6 +101,7 @@ const SOURCE_FILES = [
     `${ORT_FOLDER}/onnxruntime/core/providers/cpu/tensor/reshape.cc`,
     `${ORT_FOLDER}/onnxruntime/core/providers/cpu/nn/conv.cc`,
     `${ORT_FOLDER}/onnxruntime/contrib_ops/cpu/fused_conv.cc`,
+    `${ORT_FOLDER}/onnxruntime/contrib_ops/cpu/fused_activation.cc`,
     `${ORT_FOLDER}/onnxruntime/core/providers/cpu/tensor/resize.cc`,
     `${ORT_FOLDER}/onnxruntime/core/providers/cpu/tensor/upsample.cc`,
 
