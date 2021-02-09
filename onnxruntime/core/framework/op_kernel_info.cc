@@ -31,13 +31,14 @@ OpKernelInfo::OpKernelInfo(const OpKernelInfo& other)
                    other.ort_value_name_idx_map_, other.funcs_mgr_, other.data_transfer_mgr_) {}
 #else
 OpKernelInfo::OpKernelInfo(AllocatorPtr allocator, const onnxruntime::NodeAttributes& attributes,
-      const std::vector<int>& input_arg_count, size_t num_inputs, size_t num_outputs)
+      const std::vector<int>& input_arg_count, const int opset_version, size_t num_inputs, size_t num_outputs)
     : OpNodeProtoHelper(&proto_helper_context_),
       allocator_(allocator),
       node_(attributes, input_arg_count),
+      opset_version_(opset_version),
       proto_helper_context_(attributes, num_inputs, num_outputs) {}
 OpKernelInfo::OpKernelInfo(const OpKernelInfo& other)
-    : OpKernelInfo(other.allocator_, other.node_.GetAttributes(), other.node_.InputArgCount(), other.GetInputCount(), other.GetOutputCount()) {}
+    : OpKernelInfo(other.allocator_, other.node_.GetAttributes(), other.node_.InputArgCount(), other.opset_version_, other.GetInputCount(), other.GetOutputCount()) {}
 #endif
 
 AllocatorPtr OpKernelInfo::GetAllocator(int device_id, OrtMemType mem_type) const {

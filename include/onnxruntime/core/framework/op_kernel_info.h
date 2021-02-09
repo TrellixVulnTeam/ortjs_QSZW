@@ -30,18 +30,11 @@ public:
   const NodeAttributes& GetAttributes() const noexcept { return attributes_; }
   /** Gets the count of arguments for each of the Node's explicit inputs. */
   const std::vector<int>& InputArgCount() const noexcept { return input_arg_count_; }
-  /** Gets the opset version that the Node's operator was first defined in.
-  @returns Opset version. If -1 the Node's operator has not been set.
-  */
-  int SinceVersion() const noexcept { return since_version_; }
 
 private:
   const NodeAttributes& attributes_;
   // input/output defs and arg count
   std::vector<int> input_arg_count_;
-  // TODO: MODIFICATION NEEDED HERE
-  // set from op_->SinceVersion() or via deserialization when OpSchema is not available
-  int since_version_ = 11;
 };
 #endif
 
@@ -68,6 +61,7 @@ class OpKernelInfo : public OpNodeProtoHelper<ProtoHelperNodeContext> {
   explicit OpKernelInfo(AllocatorPtr allocator,
                         const onnxruntime::NodeAttributes& attributes,
                         const std::vector<int>& input_arg_count,
+                        const int opset_version,
                         size_t num_inputs,
                         size_t num_outputs);
 #endif
@@ -93,6 +87,7 @@ class OpKernelInfo : public OpNodeProtoHelper<ProtoHelperNodeContext> {
   common::Status GetFusedFuncs(NodeComputeInfo*& compute_info) const;
 #else
   const onnxruntime::NodeStub& node() const noexcept { return node_; }
+  const int GetOpsetVersion() const noexcept { return opset_version_; }
 #endif
 
  private:
@@ -112,6 +107,7 @@ class OpKernelInfo : public OpNodeProtoHelper<ProtoHelperNodeContext> {
 #else
   onnxruntime::NodeStub node_;
   AllocatorPtr allocator_;
+  int opset_version_;
 #endif
   ProtoHelperNodeContext proto_helper_context_;
 };

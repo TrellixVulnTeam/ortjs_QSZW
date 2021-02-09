@@ -1,6 +1,6 @@
 [
     {
-        "name": "Resize test with bias",
+        "name": "Resize-13 test - tf_crop_and_resize",
         "operator": "Resize",
         "opset": 13,
         "attributes": [
@@ -38,6 +38,151 @@
                 "dims": [3, 3],
                 "type": 1,
                 "value_idx": 4
+            }
+        ]
+    }, 
+    {
+        "name": "Resize-13 test - tf_crop_and_resize_with_extrapolation",
+        "operator": "Resize",
+        "opset": 13,
+        "attributes": [
+            { "name": "mode", "data": "linear", "type": "string" },
+            { "name": "coordinate_transformation_mode", "data": "tf_crop_and_resize", "type":"string"},
+            { "name": "extrapolation_value", "data": 10.0, "type":"float"}
+        ],
+        "inputs": [
+            {
+                "data": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0,
+                        10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0],
+                "dims": [1, 1, 4, 4],
+                "type": 1,
+                "value_idx": 0
+            }, {
+                "data": [0.0, 0.0, 0.4, 0.6, 1.0, 1.0, 1.2, 1.7],
+                "dims": [8],
+                "type": 1,
+                "value_idx": 1
+            }, {
+                "data": [1.0, 1.0, 0.8, 0.8],
+                "dims": [4],
+                "type": 1, 
+                "value_idx": 2
+            }
+        ],
+        "initializers": [],
+        "outputs": [
+            {
+                "data": [7.6, 10.0, 10.0, 12.4, 10, 10.0, 10.0, 10.0, 10.0],
+                "dims": [1, 1, 3, 3],
+                "type": 1,
+                "value_idx": 3
+            }
+        ]
+    }, 
+    {
+        "name": "Resize-12 test - Cubic Upsample tf_half_pixel_for_nn",
+        "operator": "Resize",
+        "opset": 12,
+        "attributes": [
+            { "name": "mode", "data": "cubic", "type": "string" },
+            { "name": "coordinate_transformation_mode", "data": "tf_half_pixel_for_nn", "type":"string"}
+        ],
+        "inputs": [
+            {
+                "data": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0,
+                        10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0],
+                "dims": [1, 1, 4, 4],
+                "type": 1,
+                "value_idx": 0
+            }, {
+                "data": [],
+                "dims": [0],
+                "type": 1,
+                "value_idx": 1
+            }, {
+                "data": [1.0, 1.0, 2.0, 2.0],
+                "dims": [4],
+                "type": 1, 
+                "value_idx": 2
+            }
+        ],
+        "initializers": [],
+        "outputs": [
+            {
+                "data": [1.95703, 2.43359, 3.0625, 3.46875, 4.09766, 4.57422, 4.87109, 4.80078,
+                    3.86328, 4.33984, 4.96875, 5.375, 6.00391, 6.48047, 6.77734, 6.70703,
+                    6.37891, 6.85547, 7.48438, 7.89063, 8.51953, 8.99609, 9.29297, 9.22266,
+                    8.00391, 8.48047, 9.10938, 9.51563, 10.1445, 10.6211, 10.918, 10.8477,
+                    10.5195, 10.9961, 11.625, 12.0313, 12.6602, 13.1367, 13.4336, 13.3633,
+                    12.4258, 12.9023, 13.5313, 13.9375, 14.5664, 15.043, 15.3398, 15.2695,
+                    13.6133, 14.0898, 14.7188, 15.125, 15.7539, 16.2305, 16.5273, 16.457,
+                    13.332, 13.8086, 14.4375, 14.8438, 15.4727, 15.9492, 16.2461, 16.1758],
+                "dims": [1, 1, 8, 8],
+                "type": 1,
+                "value_idx": 3
+            }
+        ]
+    }, 
+    {
+        "name": "Resize-10 test - Nearest No Scale",
+        "operator": "Resize",
+        "opset": 10,
+        "attributes": [
+            { "name": "mode", "data": "nearest", "type": "string" }
+        ],
+        "inputs": [
+            {
+                "data": [1.0, 2.0, 3.0, 4.0],
+                "dims": [1, 1, 2, 2],
+                "type": 1,
+                "value_idx": 0
+            }, {
+                "data": [1.0, 1.0, 1.0, 1.0],
+                "dims": [4],
+                "type": 1, 
+                "value_idx": 1
+            }
+        ],
+        "initializers": [],
+        "outputs": [
+            {
+                "data": [1.0, 2.0, 3.0, 4.0],
+                "dims": [1, 1, 2, 2],
+                "type": 1,
+                "value_idx": 2
+            }
+        ]
+    }, 
+    {
+        "name": "Resize-10 test - Linear Scale Upsample Test 2D Bilinear",
+        "operator": "Resize",
+        "opset": 10,
+        "attributes": [
+            { "name": "mode", "data": "linear", "type": "string" }
+        ],
+        "inputs": [
+            {
+                "data": [1.0, 3.0, 4.0],
+                "dims": [2, 2],
+                "type": 1,
+                "value_idx": 0
+            }, {
+                "data": [2.0, 4.0],
+                "dims": [2],
+                "type": 1, 
+                "value_idx": 1
+            }
+        ],
+        "initializers": [],
+        "outputs": [
+            {
+                "data": [1.0, 1.5, 2.0, 2.5, 3.0, 3.0, 3.0, 3.0,
+                        2.5, 3.25, 4.0, 4.75, 5.5, 5.5, 5.5, 5.5,
+                        4.0, 5.0, 6.0, 7.0, 8.0, 8.0, 8.0, 8.0,
+                        4.0, 5.0, 6.0, 7.0, 8.0, 8.0, 8.0, 8.0],
+                "dims": [4, 8],
+                "type": 1,
+                "value_idx": 2
             }
         ]
     }

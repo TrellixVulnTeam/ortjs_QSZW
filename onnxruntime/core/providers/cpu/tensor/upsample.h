@@ -48,7 +48,11 @@ class UpsampleBase {
  protected:
   UpsampleBase(OpKernelInfo info) : scales_cached_(false), roi_cached_(false), use_extrapolation_(false) {
     const auto& node = info.node();
+  #if !defined(__wasm__)
     auto opset = node.SinceVersion();
+  #else
+    auto opset = info.GetOpsetVersion();
+  #endif
     is_resize_ = (opset >= 10);
 
     std::string mode;

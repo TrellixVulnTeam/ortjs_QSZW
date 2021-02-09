@@ -109,6 +109,7 @@ void InferenceContext::InitKernel(int index,
         kernel_input_arg_count_[index].push_back(kernel_input_indices_[index].size());
     }
     ::onnxruntime::OpKernelInfo info(alloc_, attributes_[index], kernel_input_arg_count_[index],
+                                        opset_version,
                                         static_cast<int>(kernel_input_indices_[index].size()),
                                         static_cast<int>(kernel_output_indices_[index].size()));
     // naive resolve implementation
