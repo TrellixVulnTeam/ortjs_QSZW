@@ -17,6 +17,7 @@
 #include "core/providers/cpu/tensor/resize.h"
 #include "core/providers/cpu/nn/conv.h"
 #include "contrib_ops/cpu/fused_conv.h"
+#include "contrib_ops/cpu/nchwc_ops.h"
 #include "core/mlas/inc/mlas.h"
 
 #include <thread>
@@ -123,6 +124,12 @@ void InferenceContext::InitKernel(int index,
         kernels_[index] = new ::onnxruntime::Conv<float>{info};
     } else if (op == "FusedConv") {
         kernels_[index] = new ::onnxruntime::contrib::FusedConvFloat{info};
+    } else if (op == "ConvNchwc") {
+        kernels_[index] = new ::onnxruntime::contrib::NchwcConv{info};
+    } else if (op == "ReorderInput") {
+        kernels_[index] = new ::onnxruntime::contrib::ReorderInput{info};
+    } else if (op == "ReorderOutput") {
+        kernels_[index] = new ::onnxruntime::contrib::ReorderOutput{info};
     } else if (op == "Gather") {
         kernels_[index] = new ::onnxruntime::Gather{info};
     } else if (op == "MatMul") {
@@ -191,51 +198,57 @@ void InferenceContext::SetInput(int index, const emscripten::val& arr_dims) {
 }
 
 void InferenceContext::Run() {
-    std::vector<std::pair<uint64_t, uint64_t>> op_time_stamps;
-    op_time_stamps.reserve(kernels_.size());
-    for (size_t i = 0; i < kernels_.size(); i++) {
-        onnxruntime::OpKernelContext ctx{values_.data(),
-                                         types_.data(),
-                                         kernels_[i],
-                                         nullptr,
-                                         kernel_input_indices_[i],
-                                         kernel_output_indices_[i]};
-#ifndef NDEBUG
-        printf("running kernel %d\n", (int)(i));
-        for (size_t j = 0; j < kernel_input_indices_[i].size(); j++) {
-            auto t = ctx.Input<onnxruntime::Tensor>(j);
-            std::cout<<"input"<<j<<" ["<<kernel_input_indices_[i][j]<<"/"<<values_.size()<<"]: "<<t->Shape().ToString()<<" "<<t->DataRaw()<<std::endl;
-        }
-#endif
-        uint64_t op_start = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
-        ORT_ENFORCE(kernels_[i]->Compute(&ctx).IsOK(),
-                    "failed to run kernel");
-        uint64_t op_end = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
-        op_time_stamps.emplace_back(op_start, op_end);
-
-#ifndef NDEBUG
-        for (size_t j = 0; j < kernel_output_indices_[i].size(); j++) {
-            auto &t = values_[kernel_output_indices_[i][j]].Get<onnxruntime::Tensor>();
-            std::cout<<"output"<<j<<" ["<<kernel_output_indices_[i][j]<<"/"<<values_.size()<<"]: "<<t.Shape().ToString()<<" "<<t.DataRaw()<<std::endl;
-        }
-#endif
-    }
-
-    if (op_time_stamps.size()) {
-        std::stringstream ss;
-        ss << "Start Run() from [thread:" << std::this_thread::get_id() << "] at " <<  op_time_stamps.front().first << std::endl;
+    try {
+        std::vector<std::pair<uint64_t, uint64_t>> op_time_stamps;
+        op_time_stamps.reserve(kernels_.size());
         for (size_t i = 0; i < kernels_.size(); i++) {
-            const auto& op_time_stamp = op_time_stamps[i];
-            ss << "    Kernel " << i << ", op_name:" << kernel_names_[i];
-            ss << ", Start:" << op_time_stamp.first << ", End:" << op_time_stamp.second;
-            ss << ", latency:" << (op_time_stamp.second - op_time_stamp.first) << " us";
-            ss << std::endl;
-            std::cout << ss.str();
+            onnxruntime::OpKernelContext ctx{values_.data(),
+                                            types_.data(),
+                                            kernels_[i],
+                                            nullptr,
+                                            kernel_input_indices_[i],
+                                            kernel_output_indices_[i]};
+    #ifndef NDEBUG
+            printf("running kernel %d\n", (int)(i));
+            for (size_t j = 0; j < kernel_input_indices_[i].size(); j++) {
+                auto t = ctx.Input<onnxruntime::Tensor>(j);
+                std::cout<<"input"<<j<<" ["<<kernel_input_indices_[i][j]<<"/"<<values_.size()<<"]: "<<t->Shape().ToString()<<" "<<t->DataRaw()<<std::endl;
+            }
+    #endif
+            uint64_t op_start = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+            ORT_ENFORCE(kernels_[i]->Compute(&ctx).IsOK(),
+                        "failed to run kernel");
+            uint64_t op_end = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+            op_time_stamps.emplace_back(op_start, op_end);
+
+    #ifndef NDEBUG
+            for (size_t j = 0; j < kernel_output_indices_[i].size(); j++) {
+                auto &t = values_[kernel_output_indices_[i][j]].Get<onnxruntime::Tensor>();
+                std::cout<<"output"<<j<<" ["<<kernel_output_indices_[i][j]<<"/"<<values_.size()<<"]: "<<t.Shape().ToString()<<" "<<t.DataRaw()<<std::endl;
+            }
+    #endif
+        }
+
+        if (op_time_stamps.size()) {
+            std::stringstream ss;
+            ss << "Start Run() from [thread:" << std::this_thread::get_id() << "] at " <<  op_time_stamps.front().first << std::endl;
+            for (size_t i = 0; i < kernels_.size(); i++) {
+                const auto& op_time_stamp = op_time_stamps[i];
+                ss << "    Kernel " << i << ", op_name:" << kernel_names_[i];
+                ss << ", Start:" << op_time_stamp.first << ", End:" << op_time_stamp.second;
+                ss << ", latency:" << (op_time_stamp.second - op_time_stamp.first) << " us";
+                ss << std::endl;
+                std::cout << ss.str();
+                ss.str(std::string());
+            }
+            ss << "End Run() from [thread:" << std::this_thread::get_id() << "] at " <<  op_time_stamps.back().second;
+            ss << " total Run() latency:" << (op_time_stamps.back().second - op_time_stamps.front().first) << " us" << std::endl;
+            std::cout << ss.str() << std::endl;
             ss.str(std::string());
         }
-        ss << "End Run() from [thread:" << std::this_thread::get_id() << "] at " <<  op_time_stamps.back().second;
-        ss << " total Run() latency:" << (op_time_stamps.back().second - op_time_stamps.front().first) << " us" << std::endl;
-        std::cout << ss.str();
+    } catch (...) {
+        std::cout << "Exception happended" << std::endl;
+        throw;
     }
 }
 

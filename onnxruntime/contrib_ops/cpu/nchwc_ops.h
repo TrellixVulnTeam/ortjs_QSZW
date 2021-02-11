@@ -6,7 +6,9 @@
 #include "core/common/common.h"
 #include "core/framework/op_kernel.h"
 #include "core/providers/cpu/nn/conv_attributes.h"
+#if !defined(__wasm__)
 #include "core/providers/cpu/nn/pool.h"
+#endif
 #include "contrib_ops/cpu/fused_activation.h"
 
 namespace onnxruntime {
@@ -49,6 +51,8 @@ class NchwcConv : public OpKernel {
   MLAS_ACTIVATION activation_;
 };
 
+#if !defined(__wasm__)
+
 class NchwcPoolBase : public PoolBase {
  public:
   NchwcPoolBase(const OpKernelInfo& info) : PoolBase(info) {
@@ -90,6 +94,8 @@ class NchwcUpsample : public OpKernel {
  private:
   std::vector<int64_t> scales_;
 };
+
+#endif
 
 }  // namespace contrib
 }  // namespace onnxruntime

@@ -35,6 +35,8 @@ ONNX_CPU_OPERATOR_TYPED_NCHWC_KERNEL(
         .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
     NchwcConv);
 
+#if !defined(__wasm__)
+
 ONNX_CPU_OPERATOR_TYPED_NCHWC_KERNEL(
     MaxPool,
     1,
@@ -74,6 +76,8 @@ ONNX_CPU_OPERATOR_TYPED_NCHWC_KERNEL(
     KernelDefBuilder()
         .TypeConstraint("T", DataTypeImpl::GetTensorType<float>()),
     NchwcUpsample);
+
+#endif
 
 Status ReorderInput::Compute(OpKernelContext* context) const {
   const auto* X = context->Input<Tensor>(0);
@@ -185,6 +189,8 @@ Status NchwcConv::Compute(OpKernelContext* context) const {
   return Status::OK();
 }
 
+#if !defined(__wasm__)
+
 Status NchwcPoolBase::NchwcPool(OpKernelContext* context, MLAS_POOLING_KIND kind) const {
   const auto* X = context->Input<Tensor>(0);
   const auto& X_shape = X->Shape();
@@ -234,6 +240,8 @@ Status NchwcUpsample::Compute(OpKernelContext* context) const {
 
   return Status::OK();
 }
+
+#endif
 
 }  // namespace contrib
 }  // namespace onnxruntime
