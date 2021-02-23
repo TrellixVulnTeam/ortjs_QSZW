@@ -71,6 +71,7 @@ InferenceContext::InferenceContext(int num_kernels,
     }
 
     kernel_names_.resize(num_kernels);
+    node_names_.resize(num_kernels);
     attributes_.resize(num_kernels);
     kernels_.resize(num_kernels);
     kernel_input_indices_.resize(num_kernels);
@@ -98,12 +99,14 @@ void InferenceContext::InitKernel(int index,
                                   int opset_version,
                                   const val& arr_input_indices,
                                   const val& arr_output_indices,
-                                  const std::string varience) {
+                                  const std::string& varience,
+                                  const std::string& node_name) {
     ORT_ENFORCE(index >= 0 && index < kernels_.size(), "index out of range");
     // TODO
     // kernels_.emplace_back(...);
     // attributes_.emplace_back(...);
     kernel_names_[index] = op;
+    node_names_[index] = node_name;
     kernel_input_indices_[index] = convertJSArrayToNumberVector<int>(arr_input_indices);
     kernel_output_indices_[index] = convertJSArrayToNumberVector<int>(arr_output_indices);
     if (op == "Concat") {
@@ -113,6 +116,9 @@ void InferenceContext::InitKernel(int index,
                                         opset_version,
                                         static_cast<int>(kernel_input_indices_[index].size()),
                                         static_cast<int>(kernel_output_indices_[index].size()));
+
+    static const std::string kNchwcDomain = "com.microsoft.nchwc";
+    // std::cout << "    ====InitKernel " << op << " of " << opset << ", version:" << opset_version << " @" << index << std::endl;
     // naive resolve implementation
     if (op == "Gemm") {
         kernels_[index] = new ::onnxruntime::Gemm<float>{info};
@@ -120,12 +126,12 @@ void InferenceContext::InitKernel(int index,
         kernels_[index] = new ::onnxruntime::Add<float>{info};
     } else if (op == "Concat") {
         kernels_[index] = new ::onnxruntime::Concat{info};
+    } else if (op == "Conv" && opset == kNchwcDomain) {
+        kernels_[index] = new ::onnxruntime::contrib::NchwcConv{info};
     } else if (op == "Conv") {
         kernels_[index] = new ::onnxruntime::Conv<float>{info};
     } else if (op == "FusedConv") {
         kernels_[index] = new ::onnxruntime::contrib::FusedConvFloat{info};
-    } else if (op == "ConvNchwc") {
-        kernels_[index] = new ::onnxruntime::contrib::NchwcConv{info};
     } else if (op == "ReorderInput") {
         kernels_[index] = new ::onnxruntime::contrib::ReorderInput{info};
     } else if (op == "ReorderOutput") {
@@ -197,7 +203,46 @@ void InferenceContext::SetInput(int index, const emscripten::val& arr_dims) {
     CreateMLValue(alloc_, dims, types_[index], &values_[index]);
 }
 
+std::string Attributes2String(const onnxruntime::NodeAttributes& attrs) {
+    std::stringstream ss;
+    ss << "{";
+    int count = 0;
+    for (const auto& kv : attrs) {
+        if (count++ != 0) {
+            ss << ", ";
+        }
+        ss << kv.first << ": ";
+        auto t = kv.second.type();
+        switch (t) {
+        case ONNX_NAMESPACE::AttributeProto_AttributeType_FLOAT:
+            ss << kv.second.f();
+            break;
+        case ONNX_NAMESPACE::AttributeProto_AttributeType_INT:
+            ss << kv.second.i();
+            break;
+        case ONNX_NAMESPACE::AttributeProto_AttributeType_STRING:
+            ss << kv.second.s();
+            break;
+        case ONNX_NAMESPACE::AttributeProto_AttributeType_FLOATS:
+            for (const float f: kv.second.floats()) ss << f << ",";
+            break;
+        case ONNX_NAMESPACE::AttributeProto_AttributeType_INTS:
+            for (const int i: kv.second.ints()) ss << i << ",";
+            break;
+        case ONNX_NAMESPACE::AttributeProto_AttributeType_STRINGS:
+            for (const auto& str : kv.second.strings()) ss << str << ",";
+            break;
+        default:
+            ss << "OtherType_" << (int)t;
+            break;
+        }
+    };
+    ss << "}";
+    return ss.str();
+}
+
 void InferenceContext::Run() {
+    static int printed = 0;
     try {
         std::vector<std::pair<uint64_t, uint64_t>> op_time_stamps;
         op_time_stamps.reserve(kernels_.size());
@@ -208,44 +253,44 @@ void InferenceContext::Run() {
                                             nullptr,
                                             kernel_input_indices_[i],
                                             kernel_output_indices_[i]};
-    #ifndef NDEBUG
-            printf("running kernel %d\n", (int)(i));
-            for (size_t j = 0; j < kernel_input_indices_[i].size(); j++) {
-                auto t = ctx.Input<onnxruntime::Tensor>(j);
-                std::cout<<"input"<<j<<" ["<<kernel_input_indices_[i][j]<<"/"<<values_.size()<<"]: "<<t->Shape().ToString()<<" "<<t->DataRaw()<<std::endl;
+    #ifndef NDEBUG_AAA
+            if (printed == 0) {
+                printf("++running kernel %d op %s (%s) %s\n", (int)(i), node_names_[i].c_str(), kernel_names_[i].c_str(), Attributes2String(attributes_[i]).c_str());
+                for (size_t j = 0; j < kernel_input_indices_[i].size(); j++) {
+                    auto t = ctx.Input<onnxruntime::Tensor>(j);
+                    std::cout<<"    input"<<j<<" ["<<kernel_input_indices_[i][j]<<"/"<<values_.size()<<"]: "<<t->Shape().ToString()<<" "<<t->DataRaw()<<std::endl;
+                }
             }
     #endif
             uint64_t op_start = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
-            ORT_ENFORCE(kernels_[i]->Compute(&ctx).IsOK(),
-                        "failed to run kernel");
+            ORT_ENFORCE(kernels_[i]->Compute(&ctx).IsOK(), "failed to run kernel");
             uint64_t op_end = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
             op_time_stamps.emplace_back(op_start, op_end);
 
-    #ifndef NDEBUG
-            for (size_t j = 0; j < kernel_output_indices_[i].size(); j++) {
-                auto &t = values_[kernel_output_indices_[i][j]].Get<onnxruntime::Tensor>();
-                std::cout<<"output"<<j<<" ["<<kernel_output_indices_[i][j]<<"/"<<values_.size()<<"]: "<<t.Shape().ToString()<<" "<<t.DataRaw()<<std::endl;
+    #ifndef NDEBUG_AAA
+            if (printed == 0) {
+                for (size_t j = 0; j < kernel_output_indices_[i].size(); j++) {
+                    auto &t = values_[kernel_output_indices_[i][j]].Get<onnxruntime::Tensor>();
+                    std::cout<<"    output"<<j<<" ["<<kernel_output_indices_[i][j]<<"/"<<values_.size()<<"]: "<<t.Shape().ToString()<<" "<<t.DataRaw()<<std::endl;
+                }
             }
     #endif
         }
 
         if (op_time_stamps.size()) {
-            std::stringstream ss;
-            ss << "Start Run() from [thread:" << std::this_thread::get_id() << "] at " <<  op_time_stamps.front().first << std::endl;
+            std::cout << "Start Run() from [thread:" << std::this_thread::get_id() << "] at " <<  op_time_stamps.front().first << std::endl;
+    #ifndef NDEBUG_AAA
             for (size_t i = 0; i < kernels_.size(); i++) {
                 const auto& op_time_stamp = op_time_stamps[i];
-                ss << "    Kernel " << i << ", op_name:" << kernel_names_[i];
-                ss << ", Start:" << op_time_stamp.first << ", End:" << op_time_stamp.second;
-                ss << ", latency:" << (op_time_stamp.second - op_time_stamp.first) << " us";
-                ss << std::endl;
-                std::cout << ss.str();
-                ss.str(std::string());
+                std::cout << "    Kernel " << i << ", name:" << node_names_[i] << ", op_type:" << kernel_names_[i];
+                std::cout << ", Start:" << op_time_stamp.first << ", End:" << op_time_stamp.second;
+                std::cout << ", latency:" << (op_time_stamp.second - op_time_stamp.first) << " us" << std::endl;
             }
-            ss << "End Run() from [thread:" << std::this_thread::get_id() << "] at " <<  op_time_stamps.back().second;
-            ss << " total Run() latency:" << (op_time_stamps.back().second - op_time_stamps.front().first) << " us" << std::endl;
-            std::cout << ss.str() << std::endl;
-            ss.str(std::string());
+    #endif
+            std::cout << "End Run() from [thread:" << std::this_thread::get_id() << "] at " <<  op_time_stamps.back().second;
+            std::cout << " total Run() latency:" << (op_time_stamps.back().second - op_time_stamps.front().first) << " us" << std::endl;
         }
+        printed++;
     } catch (...) {
         std::cout << "Exception happended" << std::endl;
         throw;

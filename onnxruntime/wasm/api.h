@@ -20,7 +20,8 @@ public:
     void SetInitializer(int index, const emscripten::val& arr_dims);
     void SetInput(int index, const emscripten::val& arr_dims);
     void InitKernel(int index, const std::string& op, const std::string& opset, int opset_version,
-                    const emscripten::val& arr_input_indices, const emscripten::val& arr_output_indices, const std::string varience);
+                    const emscripten::val& arr_input_indices, const emscripten::val& arr_output_indices,
+                    const std::string& varience, const std::string& node_name);
 
     void AddAttribute_f(int kernel_index, const std::string& name, float value);
     void AddAttribute_floats(int kernel_index, const std::string& name, const emscripten::val& arr_values);
@@ -39,6 +40,7 @@ private:
     std::vector<onnxruntime::MLDataType> types_;
     std::vector<bool> preserve_;
     std::vector<std::string> kernel_names_;
+    std::vector<std::string> node_names_;
 
     onnxruntime::AllocatorPtr alloc_;
     std::vector<onnxruntime::OpKernel*> kernels_;

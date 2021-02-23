@@ -151,10 +151,14 @@ if (BUILD_ENABLE_SIMD) {
     args += `
 -msimd128 
 ${path.normalize(`${ORT_FOLDER}/onnxruntime/core/mlas/lib/wasm_simd/sgemmc.cpp`)}
+${path.normalize(`${ORT_FOLDER}/onnxruntime/core/mlas/lib/wasm_simd/sgemmv.cpp`)}
+${path.normalize(`${ORT_FOLDER}/onnxruntime/core/mlas/lib/wasm/depthwise_conv_hwc.cpp`)}
 `
 } else {
     args += `
 ${path.normalize(`${ORT_FOLDER}/onnxruntime/core/mlas/lib/wasm/sgemmc.cpp`)}
+${path.normalize(`${ORT_FOLDER}/onnxruntime/core/mlas/lib/wasm/sgemmv.cpp`)}
+${path.normalize(`${ORT_FOLDER}/onnxruntime/core/mlas/lib/wasm/depthwise_conv_hwc.cpp`)}
 `
 }
 

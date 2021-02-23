@@ -913,6 +913,11 @@ Return Value:
     //
     // Iterate over each batch and group.
     //
+#if defined(__wasm__)
+    if (Algorithm == MlasConvAlgorithmDepthwise) {
+        std::fill_n(WorkingBuffer, Parameters->InputShape[1] + 2, 0.0f);
+    }
+#endif
 
     for (size_t batch = 0; batch < BatchCount; batch++) {
 
@@ -973,6 +978,14 @@ Return Value:
                     break;
                 }
 
+#if defined(__wasm__)
+                case MlasConvAlgorithmDepthwise:
+                {
+                    MlasConvDepthwiseFloat_CHW(Parameters, Input, filter, bias, Output, WorkingBuffer);
+                    MlasActivation(Parameters->Activation, Output, bias, FilterCount, OutputSize, OutputSize);
+                    break;
+                }
+#endif
                 case MlasConvAlgorithmExpandThenGemmSegmented:
                 {
                     //
@@ -1204,6 +1217,20 @@ Return Value:
 
     } else {
 
+#if defined(__wasm__)
+        if (Dimensions == 2 && Parameters->FilterCount == 1 && Parameters->InputChannels == 1) {
+            if (Parameters->KernelShape[0] == 3 
+                    && Parameters->KernelShape[1] == 3
+                    && Parameters->Activation->ActivationKind == MlasReluActivation
+                    && Parameters->Padding[0] <= 1 && Parameters->Padding[1] <= 1
+                    && Parameters->Padding[2] <= 1 && Parameters->Padding[3] <= 1
+                    && Parameters->DilationShape[0] == 1 && Parameters->DilationShape[1] == 1) {
+                Parameters->Algorithm = MlasConvAlgorithmDepthwise;
+                *WorkingBufferSize = Parameters->InputShape[1] + 2;
+                return;
+            }
+        }
+#endif
         //
         // Segment the operation across multiple threads by slicing the N
         // dimension (see MlasSgemmTryMultithread).

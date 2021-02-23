@@ -225,6 +225,10 @@ Status Conv<float>::Compute(OpKernelContext* context) const {
                                                : nullptr;
     BufferUniquePtr working_buffer(working_data, BufferDeleter(alloc));
 
+    if (Parameters.Algorithm == MlasConvAlgorithmDepthwise) {
+      std::cout << " Using Depthwise for -----------------------" << std::endl;
+    }
+
     MlasConv(&Parameters,
              Xdata,
              W->template Data<float>(),
