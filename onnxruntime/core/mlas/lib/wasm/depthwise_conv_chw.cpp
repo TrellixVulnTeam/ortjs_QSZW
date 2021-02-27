@@ -107,6 +107,7 @@ MlasConvDepthwiseFloat_CHW(
     MlasConvSingleChannelAccumulate_CHW<false>(Parameters, Input, Filter, Output, Zeros);
 }
 
+
 // filter 3x3, dilations are all 1. pad is 0 or 1
 void
 MlasConvDirectFloat_CHW(
@@ -146,6 +147,5 @@ MlasConvDirectFloat_CHW(
         Filter += kernel_size;    
     }
 }
-
 
 #endif

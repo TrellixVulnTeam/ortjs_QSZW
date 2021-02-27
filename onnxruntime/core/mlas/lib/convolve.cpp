@@ -1232,13 +1232,17 @@ Return Value:
                 && Parameters->Padding[2] <= 1 && Parameters->Padding[3] <= 1
                 && Parameters->DilationShape[0] == 1 && Parameters->DilationShape[1] == 1) {
 
-            *WorkingBufferSize = Parameters->InputShape[1] + 2;
             if (Parameters->FilterCount == 1 && Parameters->InputChannels == 1){
                 Parameters->Algorithm = MlasConvAlgorithmDepthwise;
+                *WorkingBufferSize = Parameters->InputShape[1] + 2;
                 return;
             }
+
+#if !defined(__wasm_simd128__)            
             Parameters->Algorithm = MlasConvAlgorithmDirectConv;
             return;
+#endif
+
         }
 
 #endif
