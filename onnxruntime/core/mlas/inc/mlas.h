@@ -367,6 +367,7 @@ enum MLAS_CONV_ALGORITHM {
     MlasConvAlgorithmExpandThenGemmSegmented,
 #if defined(__wasm__)
     MlasConvAlgorithmDepthwise,
+    MlasConvAlgorithmDirectConv,
 #endif
 };
 
@@ -774,4 +775,16 @@ MlasConvDepthwiseFloat_CHW(
     float* Output,
     const float* Zeros
     );
+
+void
+MLASCALL
+MlasConvDirectFloat_CHW(
+    const MLAS_CONV_PARAMETERS* Parameters,
+    const float* Input,
+    const float* Filter,
+    const float* Bias,
+    float* Output,
+    const float* Zeros
+    );
+
 #endif

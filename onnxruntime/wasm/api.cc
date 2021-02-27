@@ -242,7 +242,10 @@ std::string Attributes2String(const onnxruntime::NodeAttributes& attrs) {
 }
 
 void InferenceContext::Run() {
+#ifndef NDEBUG
     static int printed = 0;
+#endif
+
     try {
         std::vector<std::pair<uint64_t, uint64_t>> op_time_stamps;
         op_time_stamps.reserve(kernels_.size());
@@ -253,7 +256,7 @@ void InferenceContext::Run() {
                                             nullptr,
                                             kernel_input_indices_[i],
                                             kernel_output_indices_[i]};
-    #ifndef NDEBUG_AAA
+#ifndef NDEBUG
             if (printed == 0) {
                 printf("++running kernel %d op %s (%s) %s\n", (int)(i), node_names_[i].c_str(), kernel_names_[i].c_str(), Attributes2String(attributes_[i]).c_str());
                 for (size_t j = 0; j < kernel_input_indices_[i].size(); j++) {
@@ -261,36 +264,38 @@ void InferenceContext::Run() {
                     std::cout<<"    input"<<j<<" ["<<kernel_input_indices_[i][j]<<"/"<<values_.size()<<"]: "<<t->Shape().ToString()<<" "<<t->DataRaw()<<std::endl;
                 }
             }
-    #endif
             uint64_t op_start = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+#endif
+
             ORT_ENFORCE(kernels_[i]->Compute(&ctx).IsOK(), "failed to run kernel");
+
+#ifndef NDEBUG
             uint64_t op_end = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
             op_time_stamps.emplace_back(op_start, op_end);
 
-    #ifndef NDEBUG_AAA
             if (printed == 0) {
                 for (size_t j = 0; j < kernel_output_indices_[i].size(); j++) {
                     auto &t = values_[kernel_output_indices_[i][j]].Get<onnxruntime::Tensor>();
                     std::cout<<"    output"<<j<<" ["<<kernel_output_indices_[i][j]<<"/"<<values_.size()<<"]: "<<t.Shape().ToString()<<" "<<t.DataRaw()<<std::endl;
                 }
             }
-    #endif
+#endif
         }
 
+#ifndef NDEBUG
         if (op_time_stamps.size()) {
             std::cout << "Start Run() from [thread:" << std::this_thread::get_id() << "] at " <<  op_time_stamps.front().first << std::endl;
-    #ifndef NDEBUG_AAA
             for (size_t i = 0; i < kernels_.size(); i++) {
                 const auto& op_time_stamp = op_time_stamps[i];
                 std::cout << "    Kernel " << i << ", name:" << node_names_[i] << ", op_type:" << kernel_names_[i];
                 std::cout << ", Start:" << op_time_stamp.first << ", End:" << op_time_stamp.second;
                 std::cout << ", latency:" << (op_time_stamp.second - op_time_stamp.first) << " us" << std::endl;
             }
-    #endif
             std::cout << "End Run() from [thread:" << std::this_thread::get_id() << "] at " <<  op_time_stamps.back().second;
             std::cout << " total Run() latency:" << (op_time_stamps.back().second - op_time_stamps.front().first) << " us" << std::endl;
         }
         printed++;
+#endif
     } catch (...) {
         std::cout << "Exception happended" << std::endl;
         throw;

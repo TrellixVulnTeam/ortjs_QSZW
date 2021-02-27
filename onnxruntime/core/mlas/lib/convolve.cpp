@@ -914,7 +914,7 @@ Return Value:
     // Iterate over each batch and group.
     //
 #if defined(__wasm__)
-    if (Algorithm == MlasConvAlgorithmDepthwise) {
+    if (Algorithm == MlasConvAlgorithmDepthwise || Algorithm == MlasConvAlgorithmDirectConv) {
         std::fill_n(WorkingBuffer, Parameters->InputShape[1] + 2, 0.0f);
     }
 #endif
@@ -985,7 +985,15 @@ Return Value:
                     MlasActivation(Parameters->Activation, Output, bias, FilterCount, OutputSize, OutputSize);
                     break;
                 }
+
+                case MlasConvAlgorithmDirectConv:
+                {
+                    MlasConvDirectFloat_CHW(Parameters, Input, filter, bias, Output, WorkingBuffer);
+                    MlasActivation(Parameters->Activation, Output, bias, FilterCount, OutputSize, OutputSize);
+                    break;
+                }
 #endif
+
                 case MlasConvAlgorithmExpandThenGemmSegmented:
                 {
                     //
@@ -1218,18 +1226,21 @@ Return Value:
     } else {
 
 #if defined(__wasm__)
-        if (Dimensions == 2 && Parameters->FilterCount == 1 && Parameters->InputChannels == 1) {
-            if (Parameters->KernelShape[0] == 3 
-                    && Parameters->KernelShape[1] == 3
-                    && Parameters->Activation->ActivationKind == MlasReluActivation
-                    && Parameters->Padding[0] <= 1 && Parameters->Padding[1] <= 1
-                    && Parameters->Padding[2] <= 1 && Parameters->Padding[3] <= 1
-                    && Parameters->DilationShape[0] == 1 && Parameters->DilationShape[1] == 1) {
+        if (Dimensions == 2
+                && Parameters->KernelShape[0] == 3 && Parameters->KernelShape[1] == 3
+                && Parameters->Padding[0] <= 1 && Parameters->Padding[1] <= 1
+                && Parameters->Padding[2] <= 1 && Parameters->Padding[3] <= 1
+                && Parameters->DilationShape[0] == 1 && Parameters->DilationShape[1] == 1) {
+
+            *WorkingBufferSize = Parameters->InputShape[1] + 2;
+            if (Parameters->FilterCount == 1 && Parameters->InputChannels == 1){
                 Parameters->Algorithm = MlasConvAlgorithmDepthwise;
-                *WorkingBufferSize = Parameters->InputShape[1] + 2;
                 return;
             }
+            Parameters->Algorithm = MlasConvAlgorithmDirectConv;
+            return;
         }
+
 #endif
         //
         // Segment the operation across multiple threads by slicing the N
